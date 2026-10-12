@@ -3,6 +3,8 @@ PLAN: "feat: dbsync — offline-first sync: run operations locally, queue writes
 TAG: v0.1.0
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 6093513914445294968
 ---
 
 > This plan is dispatched via the CodeJob workflow. See skill: agents-workflow.
