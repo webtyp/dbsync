@@ -64,6 +64,9 @@ sequenceDiagram
   server already has.
 - **Operations without `Requires` are not offline.** Only declared actions are classified: exactly
   `model.Read` = read; any other action = write.
+- **Columns by user.** `Rule.Fields(userID)` narrows the columns a user receives (minimisation:
+  a box keeps id, name and RUT of the directory; reception every column). Applied in `/snapshot`,
+  `/pull` and `/row`; the device stores the other columns empty. An unknown column name answers 500.
 - **Scopes are AND-only.** `orm` joins conditions flat, so `id = x OR owner = u` would return rows
   outside the user's scope; a condition built with `storage.Or` is refused (`/snapshot`, `/pull`
   and `/row` answer 500).

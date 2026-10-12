@@ -275,3 +275,38 @@ func TestUnsupportedScopeOperatorAnswers500(t *testing.T) {
 		t.Fatalf("got %d %q", resp.StatusCode, body)
 	}
 }
+
+// 15
+func TestFieldsSendOnlyTheChosenColumns(t *testing.T) {
+	s := newServer(t)
+	s.fields = func(string) ([]string, error) { return []string{"text"}, nil }
+	s.restart()
+	s.put(&Note{Id: "n1", Owner: userID, Text: "bootstrapped"})
+
+	d := open(t, s)
+	if n, ok := d.note("n1"); !ok || n.Text != "bootstrapped" || n.Owner != "" {
+		t.Fatalf("snapshot row = %+v (%v), want id and text only", n, ok)
+	}
+	s.put(&Note{Id: "n2", Owner: userID, Text: "pulled"})
+	eventually(t, d, "pulled row with id and text only", func() bool {
+		n, ok := d.note("n2")
+		return ok && n.Text == "pulled" && n.Owner == ""
+	})
+}
+
+// 16
+func TestUnknownFieldAnswers500(t *testing.T) {
+	s := newServer(t)
+	s.fields = func(string) ([]string, error) { return []string{"nope"}, nil }
+	s.restart()
+
+	resp, err := http.Get(s.url + dbsync.DefaultPrefix + "/snapshot?table=note")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 500 || !strings.Contains(string(body), "nope") {
+		t.Fatalf("got %d %q", resp.StatusCode, body)
+	}
+}

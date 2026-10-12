@@ -68,7 +68,7 @@ func (w *headWire) DecodeFields(r model.FieldReader) {
 
 // snapshotOut is what /snapshot writes.
 type snapshotOut struct {
-	rows []model.Model
+	rows []model.Encodable
 	next string
 }
 
@@ -110,7 +110,8 @@ type changeWire struct {
 	table  string
 	rowID  string
 	op     string
-	row    model.Model
+	row    model.Model     // client: the decoded row
+	send   model.Encodable // server: the row as sent (possibly fewer columns)
 }
 
 func (w *changeWire) IsNil() bool { return w == nil }
@@ -118,8 +119,8 @@ func (w *changeWire) EncodeFields(o model.FieldWriter) {
 	o.String(keyTable, w.table)
 	o.String(keyRowID, w.rowID)
 	o.String(keyOp, w.op)
-	if w.row != nil {
-		o.Object(keyRow, w.row)
+	if w.send != nil {
+		o.Object(keyRow, w.send)
 	}
 }
 func (w *changeWire) DecodeFields(r model.FieldReader) {
@@ -171,11 +172,14 @@ func (w *pullWire) DecodeFields(r model.FieldReader) {
 	}
 }
 
-// rowWire answers /row.
-type rowWire struct{ row model.Model }
+// rowWire answers /row. send is the row as sent (server); row receives it (client).
+type rowWire struct {
+	row  model.Model
+	send model.Encodable
+}
 
 func (w *rowWire) IsNil() bool                      { return w == nil }
-func (w *rowWire) EncodeFields(o model.FieldWriter) { o.Object(keyRow, w.row) }
+func (w *rowWire) EncodeFields(o model.FieldWriter) { o.Object(keyRow, w.send) }
 func (w *rowWire) DecodeFields(r model.FieldReader) { r.Object(keyRow, w.row) }
 
 // factoryOf returns the factory of tables whose model is named table, or nil.

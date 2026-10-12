@@ -127,16 +127,25 @@ func (s *Server) snapshot(ctx router.Context) {
 	if after := query(ctx, queryAfter); after != "" {
 		qb = qb.Where(pk).Gt(after)
 	}
-	out := &snapshotOut{}
+	cols, err := columns(rule, ctx.UserID(), proto)
+	if err != nil {
+		fail(ctx, statusServerError, err)
+		return
+	}
+	var rows []model.Model
 	err = qb.OrderBy(pk).Asc().Limit(limit).ReadAll(rule.Model, func(m model.Model) {
-		out.rows = append(out.rows, m)
+		rows = append(rows, m)
 	})
 	if err != nil {
 		fail(ctx, statusServerError, err)
 		return
 	}
-	if len(out.rows) == limit {
-		out.next, _ = pkValue(out.rows[len(out.rows)-1])
+	out := &snapshotOut{}
+	for _, m := range rows {
+		out.rows = append(out.rows, project(m, cols))
+	}
+	if len(rows) == limit {
+		out.next, _ = pkValue(rows[len(rows)-1])
 	}
 	ctx.Encode(out)
 }
@@ -176,7 +185,12 @@ func (s *Server) pull(ctx router.Context) {
 		}
 		w := &changeWire{table: c.TableName, rowID: c.RowId, op: opDelete}
 		if found {
-			w.op, w.row = opUpsert, row
+			cols, err := columns(rule, ctx.UserID(), row)
+			if err != nil {
+				fail(ctx, statusServerError, err)
+				return
+			}
+			w.op, w.send = opUpsert, project(row, cols)
 		}
 		out.changes = append(out.changes, w)
 	}
@@ -201,7 +215,12 @@ func (s *Server) row(ctx router.Context) {
 		ctx.WriteStatus(statusNotFound)
 		return
 	}
-	ctx.Encode(&rowWire{row: row})
+	cols, err := columns(rule, ctx.UserID(), row)
+	if err != nil {
+		fail(ctx, statusServerError, err)
+		return
+	}
+	ctx.Encode(&rowWire{send: project(row, cols)})
 }
 
 // readable returns the rule of table when the user may read it.

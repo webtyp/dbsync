@@ -35,6 +35,7 @@ const (
 	msgScopeOperator  = "dbsync: scope operator %s is not supported"
 	msgDuplicateRule  = "dbsync: two rules for table %s"
 	msgNoPK           = "dbsync: table %s has no primary key field"
+	msgUnknownField   = "dbsync: table %s has no field %s"
 	msgServerAnswered = "dbsync: server answered %d to %s: %s"
 )
 
@@ -43,6 +44,10 @@ func errNotOfflineOp(op string) error { return syncError(fmt.Sprintf(msgNotOffli
 func errScopeOperator(op string) error { return syncError(fmt.Sprintf(msgScopeOperator, op)) }
 
 func errDuplicateRule(table string) error { return syncError(fmt.Sprintf(msgDuplicateRule, table)) }
+
+func errUnknownField(table, field string) error {
+	return syncError(fmt.Sprintf(msgUnknownField, table, field))
+}
 
 func errNoPK(table string) error { return syncError(fmt.Sprintf(msgNoPK, table)) }
 

@@ -6,7 +6,7 @@ replace webtyp.com/dbsync => ../
 
 require (
 	webtyp.com/changelog v0.1.0
-	webtyp.com/dbsync v0.1.0
+	webtyp.com/dbsync v0.2.0
 	webtyp.com/idempotency v0.1.0
 	webtyp.com/model v0.2.2
 	webtyp.com/orm v0.12.9

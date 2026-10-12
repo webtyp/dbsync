@@ -161,12 +161,13 @@ func allow(string, model.Resource, model.Action) bool { return true }
 
 // server is the app's server: rpc + idempotency + dbsync over a change-logged mem database.
 type server struct {
-	t     *testing.T
-	log   *changelog.Log
-	db    *orm.DB
-	idem  *idempotency.Store
-	calls atomic.Int32
-	scope func(string) ([]storage.Condition, error)
+	t      *testing.T
+	log    *changelog.Log
+	db     *orm.DB
+	idem   *idempotency.Store
+	calls  atomic.Int32
+	scope  func(string) ([]storage.Condition, error)
+	fields func(string) ([]string, error)
 
 	fail503 atomic.Bool // answer 503 to create_note
 	mu      sync.Mutex
@@ -222,7 +223,7 @@ func (s *server) handler() http.Handler {
 	syncSrv, err := dbsync.NewServer(dbsync.ServerConfig{
 		DB:        s.db,
 		Log:       s.log,
-		Rules:     []dbsync.Rule{{Model: noteFactory, Resource: "note", Scope: s.scope}},
+		Rules:     []dbsync.Rule{{Model: noteFactory, Resource: "note", Scope: s.scope, Fields: s.fields}},
 		Authorize: allow,
 		Now:       now,
 	})

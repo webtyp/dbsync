@@ -37,6 +37,13 @@ func SyncRules() []dbsync.Rule {
 			Scope: func(userID string) ([]storage.Condition, error) {
 				return []storage.Condition{storage.Eq("staff_id", userID)}, nil
 			}},
+		{Model: func() model.Model { return &patients.Patient{} }, Resource: "patient",
+			Fields: func(userID string) ([]string, error) { // a box keeps a minimal directory
+				if isBox(userID) {
+					return []string{"name", "rut"}, nil
+				}
+				return nil, nil // reception: every column
+			}},
 	}
 }
 ```
@@ -45,7 +52,7 @@ func SyncRules() []dbsync.Rule {
 
 | Symbol | Side | What |
 |---|---|---|
-| `Rule{Model, Resource, Scope}` | both | one table devices keep; `model.Read` on `Resource` and `Scope` (AND-joined conditions) decide which rows a user receives |
+| `Rule{Model, Resource, Scope, Fields}` | both | one table devices keep; `model.Read` on `Resource` and `Scope` (AND-joined conditions) decide which rows a user receives; `Fields` which columns (the primary key always travels) |
 | `NewServer(ServerConfig)` / `MountAPI` | server | `/api/dbsync/register`, `/head`, `/snapshot`, `/pull`, `/row` |
 | `migrate.Migrate` | server | creates `dbsync_replica` |
 | `LocalModels(tables)` | browser | every table the local database must have |
