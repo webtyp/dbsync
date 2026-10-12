@@ -1,7 +1,7 @@
 package dbsync
 
 import (
-	webtypfmt "webtyp.com/fmt"
+	"webtyp.com/fmt"
 	"webtyp.com/model"
 	"webtyp.com/orm"
 	"webtyp.com/storage"
@@ -18,6 +18,7 @@ type Rule struct {
 	// skipped for that user. Required (closed by default).
 	Resource model.Resource
 	// Scope returns the conditions selecting the rows userID receives. nil = all rows of the table.
+	// The conditions are joined with AND; a condition built with storage.Or is refused.
 	Scope func(userID string) ([]storage.Condition, error)
 }
 
@@ -33,10 +34,12 @@ const (
 	opIn    = "IN"
 )
 
+// where adds conds to qb. OR is refused: orm joins conditions flat, so "pk = x OR owner = u"
+// would hand out rows outside the user's scope.
 func where(qb *orm.QB, conds []storage.Condition) (*orm.QB, error) {
 	for _, c := range conds {
 		if c.Logic() == logicOr {
-			qb = qb.Or()
+			return nil, errScopeOr
 		}
 		switch c.Operator() {
 		case opEq:
@@ -56,8 +59,29 @@ func where(qb *orm.QB, conds []storage.Condition) (*orm.QB, error) {
 		case opIn:
 			qb = qb.Where(c.Field()).In(c.Value())
 		default:
-			return nil, webtypfmt.Err(errScopeOperator, c.Operator())
+			return nil, errScopeOperator(c.Operator())
 		}
 	}
 	return qb, nil
+}
+
+// pkName is the column of m's primary key.
+func pkName(m model.Model) (string, error) {
+	for _, f := range m.Schema() {
+		if f.IsPK() {
+			return f.Name, nil
+		}
+	}
+	return "", errNoPK(m.ModelName())
+}
+
+// pkValue is m's primary key as text.
+func pkValue(m model.Model) (string, error) {
+	schema := m.Schema()
+	for i, f := range schema {
+		if f.IsPK() {
+			return fmt.Convert(model.ReadValues(schema, m.Pointers())[i]).String(), nil
+		}
+	}
+	return "", errNoPK(m.ModelName())
 }

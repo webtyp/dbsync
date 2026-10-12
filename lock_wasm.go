@@ -1,56 +1,34 @@
 //go:build wasm
-// +build wasm
 
 package dbsync
 
-import (
-	"syscall/js"
-)
+import "syscall/js"
 
-// TabLock lets one tab of a browser profile own the local database.
-type TabLock interface {
-	TryLock(name string) (bool, error)
-}
-
+// browserLock holds a Web Lock for the page's whole life, so a second tab of the same profile
+// cannot open the local database.
 type browserLock struct{}
 
-func (b browserLock) TryLock(name string) (bool, error) {
-	if js.Global().Get("navigator").IsUndefined() {
-		return false, nil
-	}
+func defaultTabLock() TabLock { return browserLock{} }
+
+// TryLock blocks until the browser answers: never call it from a JavaScript event callback.
+func (browserLock) TryLock(name string) (bool, error) {
 	locks := js.Global().Get("navigator").Get("locks")
-	if locks.IsUndefined() {
-		return false, nil
+	if locks.IsUndefined() || locks.IsNull() {
+		return false, errNoWebLocks
 	}
-
-	done := make(chan bool)
-
+	got := make(chan bool, 1) // buffered: the JS callback must never block
 	opts := js.Global().Get("Object").New()
 	opts.Set("ifAvailable", true)
-
-	cb := js.FuncOf(func(this js.Value, args []js.Value) any {
-		lock := args[0]
-		if lock.IsNull() || lock.IsUndefined() {
-			done <- false
+	var cb js.Func
+	cb = js.FuncOf(func(_ js.Value, args []js.Value) any {
+		if len(args) == 0 || args[0].IsNull() || args[0].IsUndefined() {
+			got <- false
 			return nil
 		}
-
-		done <- true
-
-		// Return a promise that never resolves so we hold the lock forever
-		promise := js.Global().Get("Promise").New(js.FuncOf(func(pThis js.Value, pArgs []js.Value) any {
-			// Do nothing, never resolve or reject
-			return nil
-		}))
-		return promise
+		got <- true
+		// A promise that never resolves keeps the lock until the page closes.
+		return js.Global().Get("Promise").New(js.FuncOf(func(js.Value, []js.Value) any { return nil }))
 	})
-
 	locks.Call("request", name, opts, cb)
-
-	ok := <-done
-	return ok, nil
-}
-
-func defaultTabLock() TabLock {
-	return browserLock{}
+	return <-got, nil
 }

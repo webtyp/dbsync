@@ -1,13 +1,6 @@
 //go:build !wasm
-// +build !wasm
 
 package dbsync
 
-// TabLock lets one tab of a browser profile own the local database.
-type TabLock interface {
-	TryLock(name string) (bool, error)
-}
-
-func defaultTabLock() TabLock {
-	return nil
-}
+// defaultTabLock: outside the browser there is no Web Locks; ClientConfig.Lock is required.
+func defaultTabLock() TabLock { return nil }
