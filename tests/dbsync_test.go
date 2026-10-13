@@ -246,7 +246,7 @@ func TestFirstRunNeedsTheServer(t *testing.T) {
 func TestOnlyDeclaredOperationsRunOffline(t *testing.T) {
 	s := newServer(t)
 	d := open(t, s)
-	for _, op := range []string{"notes.nope", "notes.ping"} {
+	for _, op := range []string{"notes.nope", "notes.ping", "notes.purge_notes"} {
 		err := d.call(op, &Note{})
 		if err == nil || !strings.Contains(err.Error(), "is not an offline operation") {
 			t.Fatalf("%s: err = %v", op, err)

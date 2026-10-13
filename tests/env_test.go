@@ -153,6 +153,10 @@ func (m *notes) MountOperations(reg router.OperationRegistry) {
 	}).Requires("note", model.Read)
 
 	reg.Operation("ping", func(ctx router.Context) { ctx.WriteStatus(204) }).Public()
+
+	// purge_notes demands a second factor: an offline replay cannot prove one,
+	// so dbsync must refuse to run it offline even though it declares Requires.
+	reg.Operation("purge_notes", func(ctx router.Context) { ctx.WriteStatus(204) }).Requires("note", model.Delete).RequiresMFA()
 }
 
 func now() int64 { return time.Now().UnixNano() }

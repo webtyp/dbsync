@@ -339,6 +339,9 @@ type opInfo struct {
 	name     string
 	action   model.Action
 	declared bool // Requires was called
+	// mfa: the route demands a second factor. An offline replay cannot prove
+	// one, so such an operation never runs offline.
+	mfa bool
 }
 
 // harvester is a router.OperationRegistry that only records names and actions.
@@ -373,15 +376,19 @@ func (r harvestRoute) Requires(_ model.Resource, a model.Action) router.Route {
 	r.h.ops[r.i].action, r.h.ops[r.i].declared = a, true
 	return r
 }
-func (r harvestRoute) Authenticated() router.Route          { return r }
-func (r harvestRoute) Public() router.Route                 { return r }
+func (r harvestRoute) Authenticated() router.Route { return r }
+func (r harvestRoute) Public() router.Route        { return r }
+func (r harvestRoute) RequiresMFA() router.Route {
+	r.h.ops[r.i].mfa = true
+	return r
+}
 func (r harvestRoute) Accepts(_ model.Fielder) router.Route { return r }
 func (r harvestRoute) Describe(_ string) router.Route       { return r }
 
 func (c *Client) op(name string) (opInfo, bool) {
 	for _, o := range c.ops {
 		if o.name == name {
-			return o, o.declared
+			return o, o.declared && !o.mfa
 		}
 	}
 	return opInfo{}, false
