@@ -78,3 +78,19 @@ sequenceDiagram
 - `rpc.Caller` has no request timeout: a push to a server that never answers waits for the
   browser's own network timeout (dbsync's own requests time out after 10 s).
 - `Since` keeps one entry per row: rows changed many times travel once, with their latest state.
+
+## Showing it to the person
+
+`webtyp.com/dbsync/ui` (browser only; the engine never imports it) has the two things a person
+sees. The app puts the indicator in the header slot of `platformd.Platform`:
+
+```go
+import "webtyp.com/dbsync/ui"
+
+Status: func() Component { return ui.Indicator(client) },
+```
+
+The indicator says "Online" or "Offline" with two counts: writes waiting to be sent and writes the
+server refused. Clicking it opens the conflict tray (`ui.Tray(client)`), which lists each refused
+write with the server's reason and a Dismiss button. Build each one once per page: each subscribes
+to `OnStatus`. Their styles come from `ui.RenderCSS()`.

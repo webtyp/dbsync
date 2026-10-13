@@ -1,0 +1,10 @@
+{
+  "languages": ["es"],
+  "keys": {
+    "Online": ["En línea"],
+    "Offline": ["Sin conexión"],
+    "Conflicts": ["Conflictos"],
+    "Dismiss": ["Descartar"],
+    "No conflicts": ["Sin conflictos"]
+  }
+}
