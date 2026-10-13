@@ -78,3 +78,11 @@ sequenceDiagram
 - `rpc.Caller` has no request timeout: a push to a server that never answers waits for the
   browser's own network timeout (dbsync's own requests time out after 10 s).
 - `Since` keeps one entry per row: rows changed many times travel once, with their latest state.
+
+## Showing it to the person
+
+Every app exposes the engine's state in its header slot via the indicator component, and resolves rejected writes via the conflict tray:
+
+```go
+Status: func() Component { return ui.Indicator(client) }
+```

@@ -61,3 +61,11 @@ func SyncRules() []dbsync.Rule {
 | `Client.Sync()` / `Status()` / `OnStatus(fn)` | browser | sync now; the connection indicator |
 | `Client.Rejected()` / `Dismiss(id)` | browser | the conflict tray |
 | `ErrAnotherTab`, `ErrFirstRunNeedsServer` | browser | the two errors an app shows to the user |
+
+## Showing it to the person
+
+Every app exposes the engine's state in its header slot via the indicator component, and resolves rejected writes via the conflict tray:
+
+```go
+Status: func() Component { return ui.Indicator(client) }
+```
