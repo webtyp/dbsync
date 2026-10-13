@@ -2,8 +2,10 @@
 PLAN: "feat(ui): dbsync/ui — Indicator (online, pending, conflicts) and Tray (the conflict tray with Dismiss)"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 2222425718795985435
+PR: https://github.com/webtyp/dbsync/pull/2
+REVIEWED_COMMIT: 06f8bb21f649bf1ed64cc29d44b56d37c6847ca8
 ---
 
 > This plan is dispatched via the CodeJob workflow. See skill: agents-workflow.
