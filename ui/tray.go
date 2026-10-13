@@ -1,109 +1,124 @@
 package ui
 
 import (
+	"sync"
+
 	"webtyp.com/components/actionbutton"
 	"webtyp.com/dbsync"
 	. "webtyp.com/dom"
 	. "webtyp.com/html"
 	"webtyp.com/lang"
+	"webtyp.com/outbox"
 	"webtyp.com/time"
 	"webtyp.com/widget"
 )
 
 const (
-	NameTray   = widget.Name("dbsynctray")
-	PartRow    = widget.Part("row")
-	PartReason = widget.Part("reason")
-	PartEmpty  = widget.Part("empty")
+	nameTray   = widget.Name("dbsynctray")
+	partRow    = widget.Part("row")
+	partReason = widget.Part("reason")
+	partEmpty  = widget.Part("empty")
+)
+
+const (
+	textDismiss     = lang.Text("Dismiss")
+	textNoConflicts = lang.Text("No conflicts")
+	variantDismiss  = "secondary"
 )
 
 var (
-	clsTray   = NameTray.Root()
-	clsRow    = NameTray.Class(PartRow)
-	clsReason = NameTray.Class(PartReason)
-	clsEmpty  = NameTray.Class(PartEmpty)
+	clsTray   = nameTray.Root()
+	clsRow    = nameTray.Class(partRow)
+	clsReason = nameTray.Class(partReason)
+	clsEmpty  = nameTray.Class(partEmpty)
 )
 
 type tray struct {
 	Element
 	client *dbsync.Client
-	rows   *SignalNodes
+	mu     sync.Mutex // refresh runs on the sync goroutine and after a Dismiss
+	// refused and failed are the data the rows are built from; rows is the
+	// live list. Render seeds fresh rows from the data (as datatable does):
+	// the signal's elements already belong to the painted list.
+	refused []outbox.Mutation
+	failed  error
+	shown   int // Status.Rejected at the last refresh; -1 forces one
+	rows    *SignalNodes
 }
 
+// Tray lists the writes the server refused, oldest first: when, the operation, and the server's
+// reason, each with a Dismiss button (c.Dismiss). Empty → "No conflicts".
 func Tray(c *dbsync.Client) Component {
-	t := &tray{
-		client: c,
-		rows:   NewNodes(),
-	}
-
-	t.refresh()
-
-	c.OnStatus(func(_ dbsync.Status) {
-		t.refresh()
-	})
-
+	t := &tray{client: c, shown: -1, rows: NewNodes()}
+	t.refresh(c.Status())
+	c.OnStatus(t.refresh)
 	return t
 }
 
-func (t *tray) WidgetName() widget.Name { return NameTray }
-func (t *tray) WidgetKind() widget.Kind { return widget.Region }
-
-func (t *tray) refresh() {
-	muts, err := t.client.Rejected()
-	if err != nil {
-		t.rows.Set([]*Element{Div().Set(clsRow.AsAttr()).Text(err.Error())})
+// refresh re-reads the refused writes when their count changed: the status
+// changes on every queued write, the tray only when the server refuses one or
+// the person dismisses one.
+func (t *tray) refresh(s dbsync.Status) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if s.Rejected == t.shown {
 		return
 	}
-
-	if len(muts) == 0 {
-		t.rows.Set([]*Element{
-			Div().
-				Set(clsEmpty.AsAttr()).
-				Text(lang.Translate(lang.Text("No conflicts")).String()),
-		})
-		return
-	}
-
-	var elements []*Element
-	for _, mut := range muts {
-		// Create a local copy of m to avoid closure capture issues
-		m := mut
-
-		row := Div().Set(clsRow.AsAttr())
-
-		// Date
-		dateStr := time.FormatDateTime(m.CreatedAt)
-
-		row.Child(Span().Text(dateStr))
-		row.Child(Span().Text(" " + m.Op + " "))
-
-		reasonSpan := Span().Set(clsReason.AsAttr()).Text(m.Reason)
-		row.Child(reasonSpan)
-
-		dismissBtn := &actionbutton.ActionButton{
-			Text:    lang.Text("Dismiss"),
-			Variant: "secondary",
-			OnClick: func(_ Event) {
-				if dismissErr := t.client.Dismiss(m.Id); dismissErr != nil {
-					reasonSpan.Text(m.Reason + " (" + dismissErr.Error() + ")")
-				} else {
-					t.refresh()
-				}
-			},
-		}
-		row.Child(dismissBtn.Render())
-
-		elements = append(elements, row)
-	}
-
-	t.rows.Set(elements)
+	t.shown = s.Rejected
+	t.refused, t.failed = t.client.Rejected()
+	t.rows.Set(t.build())
 }
 
-func (t *tray) Render() *Element {
-	// To serialize in SSR tests since BindChildren is WASM-only
-	el := Div().Set(clsTray.AsAttr()).BindChildren(t.rows)
-	for _, child := range t.rows.Get() {
-		el.Child(child)
+func (t *tray) build() []*Element {
+	if t.failed != nil {
+		return []*Element{Div().Set(clsRow.AsAttr()).Text(t.failed.Error())}
 	}
-	return el
+	if len(t.refused) == 0 {
+		return []*Element{Div().Set(clsEmpty.AsAttr()).Text(lang.Translate(textNoConflicts).String())}
+	}
+	rows := make([]*Element, 0, len(t.refused))
+	for _, m := range t.refused {
+		rows = append(rows, t.row(m))
+	}
+	return rows
+}
+
+// row is one refused write. A Dismiss that fails shows its error in the row
+// and leaves the write in the tray.
+func (t *tray) row(m outbox.Mutation) *Element {
+	failure := NewString("")
+	dismiss := &actionbutton.ActionButton{
+		Text:    textDismiss,
+		Variant: variantDismiss,
+		OnClick: func(Event) {
+			if err := t.client.Dismiss(m.Id); err != nil {
+				failure.Set(err.Error())
+			}
+		},
+	}
+	return Div().Set(clsRow.AsAttr()).Key(m.Id).
+		Child(Span().Text(time.FormatDateTime(m.CreatedAt))).
+		Child(Span().Text(m.Op)).
+		Child(Span().Set(clsReason.AsAttr()).Text(m.Reason)).
+		Child(Span().BindText(failure)).
+		Child(dismiss.Render())
+}
+
+func (t *tray) WidgetName() widget.Name { return nameTray }
+func (t *tray) WidgetKind() widget.Kind { return widget.Region }
+
+func (t *tray) Render() *Element {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return Div().Set(clsTray.AsAttr()).
+		BindChildren(t.rows).
+		Child(toComponents(t.build())...)
+}
+
+func toComponents(els []*Element) []Component {
+	out := make([]Component, len(els))
+	for i, el := range els {
+		out[i] = el
+	}
+	return out
 }

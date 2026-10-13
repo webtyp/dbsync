@@ -1,108 +1,96 @@
 package ui
 
 import (
-	"strconv"
-
 	"webtyp.com/components/countbadge"
 	"webtyp.com/components/modaldialog"
 	"webtyp.com/dbsync"
 	. "webtyp.com/dom"
+	"webtyp.com/fmt"
 	. "webtyp.com/html"
 	"webtyp.com/lang"
 	"webtyp.com/widget"
 )
 
 const (
-	NameIndicator = widget.Name("dbsyncindicator")
-	PartLabel     = widget.Part("label")
+	nameIndicator = widget.Name("dbsyncindicator")
+	// partToggle is the button that opens the tray. The dialog is its sibling,
+	// never its child: a click inside the dialog must not reach the button.
+	partToggle = widget.Part("toggle")
+	partLabel  = widget.Part("label")
+)
+
+const (
+	textOnline    = lang.Text("Online")
+	textOffline   = lang.Text("Offline")
+	textConflicts = lang.Text("Conflicts")
 )
 
 var (
-	clsIndicator = NameIndicator.Root()
-	clsLabel     = NameIndicator.Class(PartLabel)
+	clsIndicator = nameIndicator.Root()
+	clsToggle    = nameIndicator.Class(partToggle)
+	clsLabel     = nameIndicator.Class(partLabel)
 )
 
+// indicator binds widget.Open to "offline": the stylesheet tints the label
+// while the device cannot reach the server.
 type indicator struct {
 	Element
-	client      *dbsync.Client
-	online      *SignalBool
-	offline     *SignalBool // mapped to !online to bind Open state
+	offline     *SignalBool
+	label       *SignalString
 	pending     *SignalString
 	rejected    *SignalString
 	hasPending  *SignalBool
 	hasRejected *SignalBool
-	statusText  *SignalString
+	dialog      *modaldialog.ModalDialog
 }
 
+// Indicator shows this device's sync state: "Online" or "Offline", the writes waiting to be sent,
+// and the writes the server refused. Clicking it opens the Tray in a modal dialog.
 func Indicator(c *dbsync.Client) Component {
 	i := &indicator{
-		client:      c,
-		online:      NewBool(false),
-		offline:     NewBool(true),
-		pending:     NewString("0"),
-		rejected:    NewString("0"),
+		offline:     NewBool(false),
+		label:       NewString(""),
+		pending:     NewString(""),
+		rejected:    NewString(""),
 		hasPending:  NewBool(false),
 		hasRejected: NewBool(false),
-		statusText:  NewString(""),
+		dialog:      &modaldialog.ModalDialog{Title: textConflicts, Content: Tray(c)},
 	}
-
-	st := c.Status()
-	i.updateSignals(st)
-
-	c.OnStatus(func(s dbsync.Status) {
-		i.updateSignals(s)
-	})
-
+	i.show(c.Status())
+	c.OnStatus(i.show)
 	return i
 }
 
-func (i *indicator) updateSignals(st dbsync.Status) {
-	i.online.Set(st.Online)
-	i.offline.Set(!st.Online)
-	i.pending.Set(strconv.Itoa(st.Pending))
-	i.rejected.Set(strconv.Itoa(st.Rejected))
-	i.hasPending.Set(st.Pending > 0)
-	i.hasRejected.Set(st.Rejected > 0)
-	if st.Online {
-		i.statusText.Set(lang.Translate(lang.Text("Online")).String())
-	} else {
-		i.statusText.Set(lang.Translate(lang.Text("Offline")).String())
+func (i *indicator) show(s dbsync.Status) {
+	label := textOnline
+	if !s.Online {
+		label = textOffline
 	}
+	i.offline.Set(!s.Online)
+	i.label.Set(lang.Translate(label).String())
+	i.pending.Set(fmt.Convert(s.Pending).String())
+	i.rejected.Set(fmt.Convert(s.Rejected).String())
+	i.hasPending.Set(s.Pending > 0)
+	i.hasRejected.Set(s.Rejected > 0)
 }
 
-func (i *indicator) WidgetName() widget.Name { return NameIndicator }
+func (i *indicator) WidgetName() widget.Name { return nameIndicator }
 func (i *indicator) WidgetKind() widget.Kind { return widget.Disclosure }
 
 func (i *indicator) Render() *Element {
-	modal := &modaldialog.ModalDialog{
-		Title:   lang.Text("Conflicts"),
-		Content: Tray(i.client),
-	}
-
-	badgePending := &countbadge.CountBadge{
-		Count:   i.pending,
-		Visible: i.hasPending,
-	}
-
-	badgeRejected := &countbadge.CountBadge{
-		Count:   i.rejected,
-		Visible: i.hasRejected,
-	}
-
-	btn := Button().
-		Set(clsIndicator.AsAttr()).
-		BindStateFunc(widget.Open, i.offline.Get).
-		OnClick(func(e Event) {
-			modal.Open()
-		}).
-		Child(
-			Span().
-				Set(clsLabel.AsAttr()).
-				BindText(i.statusText),
-		).
-		Child(badgePending.Render()).
-		Child(badgeRejected.Render()).
-		Child(modal.Render())
-
-	return btn
+	// Each count rides its own anchor: pending on the label, refused on the
+	// button, so both bubbles show at once without covering each other. The
+	// text has its own span: a bound text replaces every child of its element.
+	label := Span().Set(clsLabel.AsAttr()).
+		Child(Span().BindText(i.label)).
+		Child(&countbadge.CountBadge{Count: i.pending, Visible: i.hasPending})
+	toggle := Button().Set(clsToggle.AsAttr()).
+		Attr("type", "button").
+		OnClick(func(Event) { i.dialog.Open() }).
+		Child(label).
+		Child(&countbadge.CountBadge{Count: i.rejected, Visible: i.hasRejected})
+	return Div().Set(clsIndicator.AsAttr()).
+		BindState(widget.Open, i.offline).
+		Child(toggle).
+		Child(i.dialog)
 }

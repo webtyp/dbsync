@@ -8,31 +8,42 @@ import (
 	"webtyp.com/widget/style"
 )
 
+// RenderCSS is the stylesheet of both widgets. It is a package function, not a
+// method: the widgets are unexported, so the asset build can only reach their
+// styles through the package.
 func RenderCSS() *css.Stylesheet {
-	s1 := style.For(&indicator{}).
-		Root(
+	return css.NewStylesheet(
+		(&indicator{}).sheet().Stylesheet(),
+		(&tray{}).sheet().Stylesheet(),
+	)
+}
 
-			style.Button(style.Bare), // using bare as it is an unpainted button normally
+func (i *indicator) sheet() *style.Sheet {
+	return style.For(i).
+		Root(style.Row(style.Space1)).
+		Part(partToggle,
+			style.Button(style.Bare),
 			style.Row(style.Space1),
-			style.CenterContent(),
+			style.Anchor(),
 		).
-		Part(PartLabel, style.FontSize(style.TextSm)).
-		When(widget.Open, PartLabel, style.As(style.DangerWash)).
-		Stylesheet()
+		Part(partLabel,
+			style.FontSize(style.TextSm),
+			style.Anchor(),
+		).
+		When(widget.Open, partLabel, style.As(style.DangerWash))
+}
 
-	s2 := style.For(&tray{}).
+func (t *tray) sheet() *style.Sheet {
+	return style.For(t).
 		Root(style.Stack(style.Space4)).
-		Part(PartRow,
+		Part(partRow,
 			style.Row(style.Space3),
 			style.ControlBox(),
 		).
-		Part(PartReason, style.Grow()).
-		Part(PartEmpty,
+		Part(partReason, style.Grow()).
+		Part(partEmpty,
 			style.ControlBox(),
 			style.FontSize(style.TextBase),
 			style.CenterContent(),
-		).
-		Stylesheet()
-
-	return css.NewStylesheet(css.Raw(s1.String() + "\n" + s2.String()))
+		)
 }
