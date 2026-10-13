@@ -28,7 +28,7 @@ require (
 	webtyp.com/fmt v1.0.0 // indirect
 	webtyp.com/json v0.5.29 // indirect
 	webtyp.com/outbox v0.1.0 // indirect
-	webtyp.com/pwa v0.1.1 // indirect
+	webtyp.com/pwa v0.2.0 // indirect
 	webtyp.com/time v0.5.7 // indirect
 	webtyp.com/unixid v0.3.0 // indirect
 )
