@@ -25,7 +25,7 @@ require (
 	golang.org/x/text v0.38.0 // indirect
 	howett.net/plist v1.0.0 // indirect
 	webtyp.com/color v0.1.2 // indirect
-	webtyp.com/components v0.8.26 // indirect
+	webtyp.com/components v0.8.30 // indirect
 	webtyp.com/css v0.4.31 // indirect
 	webtyp.com/escape v0.1.0 // indirect
 	webtyp.com/fetch v0.1.29 // indirect
