@@ -22,7 +22,7 @@ require (
 	webtyp.com/storage v0.1.5
 	webtyp.com/time v0.5.7
 	webtyp.com/unixid v0.3.0
-	webtyp.com/widget v0.6.40
+	webtyp.com/widget v0.6.42
 )
 
 require (
