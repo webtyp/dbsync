@@ -14,7 +14,7 @@ require (
 	webtyp.com/router v0.4.3
 	webtyp.com/rpc v0.2.3
 	webtyp.com/server v0.2.86
-	webtyp.com/storage v0.1.5
+	webtyp.com/storage v0.1.7
 	webtyp.com/widget v0.6.43
 )
 
