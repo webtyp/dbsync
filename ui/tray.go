@@ -96,7 +96,7 @@ func (t *tray) row(m outbox.Mutation) *Element {
 		},
 	}
 	return Div().Set(clsRow.AsAttr()).Key(m.Id).
-		Child(Span().Text(time.FormatDateTime(time.Nano(m.CreatedAt).Unix()))). // outbox still stores its instants as int64 nanoseconds
+		Child(Span().Text(time.FormatDateTime(m.CreatedAt.Unix()))).
 		Child(Span().Text(m.Op)).
 		Child(Span().Set(clsReason.AsAttr()).Text(m.Reason)).
 		Child(Span().BindText(failure)).

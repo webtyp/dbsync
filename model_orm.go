@@ -9,10 +9,10 @@ import (
 )
 
 type State struct {
-	Id         string
-	Replica    int64
-	Cursor     int64
-	Epoch      string
+	Id string
+	Replica int64
+	Cursor int64
+	Epoch string
 	LastMinted int64
 }
 
@@ -33,29 +33,19 @@ func (m *State) EncodeFields(w model.FieldWriter) {
 }
 
 func (m *State) DecodeFields(r model.FieldReader) {
-	if v, ok := r.String("id"); ok {
-		m.Id = v
-	}
-	if v, ok := r.Int("replica"); ok {
-		m.Replica = v
-	}
-	if v, ok := r.Int("cursor"); ok {
-		m.Cursor = v
-	}
-	if v, ok := r.String("epoch"); ok {
-		m.Epoch = v
-	}
-	if v, ok := r.Int("last_minted"); ok {
-		m.LastMinted = v
-	}
+	if v, ok := r.String("id"); ok { m.Id = v }
+	if v, ok := r.Int("replica"); ok { m.Replica = v }
+	if v, ok := r.Int("cursor"); ok { m.Cursor = v }
+	if v, ok := r.String("epoch"); ok { m.Epoch = v }
+	if v, ok := r.Int("last_minted"); ok { m.LastMinted = v }
 }
 
 type StateList []*State
 
-func (s *StateList) Len() int                         { return len(*s) }
-func (s *StateList) At(i int) model.Fielder           { return (*s)[i] }
-func (s *StateList) Append() model.Fielder            { v := &State{}; *s = append(*s, v); return v }
-func (s *StateList) IsNil() bool                      { return s == nil }
+func (s *StateList) Len() int             { return len(*s) }
+func (s *StateList) At(i int) model.Fielder { return (*s)[i] }
+func (s *StateList) Append() model.Fielder  { v := &State{}; *s = append(*s, v); return v }
+func (s *StateList) IsNil() bool          { return s == nil }
 func (s *StateList) EncodeFields(_ model.FieldWriter) {}
 func (s *StateList) DecodeFields(_ model.FieldReader) {}
 
@@ -64,16 +54,16 @@ func (m *State) Validate(action byte) error {
 }
 
 var State_ = struct {
-	Id         string
-	Replica    string
-	Cursor     string
-	Epoch      string
+	Id string
+	Replica string
+	Cursor string
+	Epoch string
 	LastMinted string
 }{
-	Id:         "id",
-	Replica:    "replica",
-	Cursor:     "cursor",
-	Epoch:      "epoch",
+	Id: "id",
+	Replica: "replica",
+	Cursor: "cursor",
+	Epoch: "epoch",
 	LastMinted: "last_minted",
 }
 
@@ -95,20 +85,18 @@ func ReadAllState(qb *orm.QB) (StateList, error) {
 }
 
 type Touched struct {
-	Id         string
+	Id string
 	MutationId string
-	TableName  string
-	RowId      string
-	CreatedAt  time.Nano
+	TableName string
+	RowId string
+	CreatedAt time.Nano
 }
 
 func (m *Touched) ModelName() string { return "dbsync_touched" }
 
 func (m *Touched) Schema() []model.Field { return TouchedModel.Fields }
 
-func (m *Touched) Pointers() []any {
-	return []any{&m.Id, &m.MutationId, &m.TableName, &m.RowId, (*int64)(&m.CreatedAt)}
-}
+func (m *Touched) Pointers() []any { return []any{&m.Id, &m.MutationId, &m.TableName, &m.RowId, (*int64)(&m.CreatedAt)} }
 
 func (m *Touched) IsNil() bool { return m == nil }
 
@@ -121,29 +109,19 @@ func (m *Touched) EncodeFields(w model.FieldWriter) {
 }
 
 func (m *Touched) DecodeFields(r model.FieldReader) {
-	if v, ok := r.String("id"); ok {
-		m.Id = v
-	}
-	if v, ok := r.String("mutation_id"); ok {
-		m.MutationId = v
-	}
-	if v, ok := r.String("table_name"); ok {
-		m.TableName = v
-	}
-	if v, ok := r.String("row_id"); ok {
-		m.RowId = v
-	}
-	if v, ok := r.Int("created_at"); ok {
-		m.CreatedAt = time.Nano(v)
-	}
+	if v, ok := r.String("id"); ok { m.Id = v }
+	if v, ok := r.String("mutation_id"); ok { m.MutationId = v }
+	if v, ok := r.String("table_name"); ok { m.TableName = v }
+	if v, ok := r.String("row_id"); ok { m.RowId = v }
+	if v, ok := r.Int("created_at"); ok { m.CreatedAt = time.Nano(v) }
 }
 
 type TouchedList []*Touched
 
-func (s *TouchedList) Len() int                         { return len(*s) }
-func (s *TouchedList) At(i int) model.Fielder           { return (*s)[i] }
-func (s *TouchedList) Append() model.Fielder            { v := &Touched{}; *s = append(*s, v); return v }
-func (s *TouchedList) IsNil() bool                      { return s == nil }
+func (s *TouchedList) Len() int             { return len(*s) }
+func (s *TouchedList) At(i int) model.Fielder { return (*s)[i] }
+func (s *TouchedList) Append() model.Fielder  { v := &Touched{}; *s = append(*s, v); return v }
+func (s *TouchedList) IsNil() bool          { return s == nil }
 func (s *TouchedList) EncodeFields(_ model.FieldWriter) {}
 func (s *TouchedList) DecodeFields(_ model.FieldReader) {}
 
@@ -152,17 +130,17 @@ func (m *Touched) Validate(action byte) error {
 }
 
 var Touched_ = struct {
-	Id         string
+	Id string
 	MutationId string
-	TableName  string
-	RowId      string
-	CreatedAt  string
+	TableName string
+	RowId string
+	CreatedAt string
 }{
-	Id:         "id",
+	Id: "id",
 	MutationId: "mutation_id",
-	TableName:  "table_name",
-	RowId:      "row_id",
-	CreatedAt:  "created_at",
+	TableName: "table_name",
+	RowId: "row_id",
+	CreatedAt: "created_at",
 }
 
 func ReadOneTouched(qb *orm.QB, model *Touched) (*Touched, error) {
@@ -183,9 +161,9 @@ func ReadAllTouched(qb *orm.QB) (TouchedList, error) {
 }
 
 type Replica struct {
-	Id        string
-	Number    int64
-	UserId    string
+	Id string
+	Number int64
+	UserId string
 	CreatedAt time.Nano
 }
 
@@ -205,26 +183,18 @@ func (m *Replica) EncodeFields(w model.FieldWriter) {
 }
 
 func (m *Replica) DecodeFields(r model.FieldReader) {
-	if v, ok := r.String("id"); ok {
-		m.Id = v
-	}
-	if v, ok := r.Int("number"); ok {
-		m.Number = v
-	}
-	if v, ok := r.String("user_id"); ok {
-		m.UserId = v
-	}
-	if v, ok := r.Int("created_at"); ok {
-		m.CreatedAt = time.Nano(v)
-	}
+	if v, ok := r.String("id"); ok { m.Id = v }
+	if v, ok := r.Int("number"); ok { m.Number = v }
+	if v, ok := r.String("user_id"); ok { m.UserId = v }
+	if v, ok := r.Int("created_at"); ok { m.CreatedAt = time.Nano(v) }
 }
 
 type ReplicaList []*Replica
 
-func (s *ReplicaList) Len() int                         { return len(*s) }
-func (s *ReplicaList) At(i int) model.Fielder           { return (*s)[i] }
-func (s *ReplicaList) Append() model.Fielder            { v := &Replica{}; *s = append(*s, v); return v }
-func (s *ReplicaList) IsNil() bool                      { return s == nil }
+func (s *ReplicaList) Len() int             { return len(*s) }
+func (s *ReplicaList) At(i int) model.Fielder { return (*s)[i] }
+func (s *ReplicaList) Append() model.Fielder  { v := &Replica{}; *s = append(*s, v); return v }
+func (s *ReplicaList) IsNil() bool          { return s == nil }
 func (s *ReplicaList) EncodeFields(_ model.FieldWriter) {}
 func (s *ReplicaList) DecodeFields(_ model.FieldReader) {}
 
@@ -233,14 +203,14 @@ func (m *Replica) Validate(action byte) error {
 }
 
 var Replica_ = struct {
-	Id        string
-	Number    string
-	UserId    string
+	Id string
+	Number string
+	UserId string
 	CreatedAt string
 }{
-	Id:        "id",
-	Number:    "number",
-	UserId:    "user_id",
+	Id: "id",
+	Number: "number",
+	UserId: "user_id",
 	CreatedAt: "created_at",
 }
 
@@ -260,3 +230,4 @@ func ReadAllReplica(qb *orm.QB) (ReplicaList, error) {
 	)
 	return results, err
 }
+

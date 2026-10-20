@@ -11,12 +11,12 @@ require (
 	webtyp.com/fetch v0.1.29
 	webtyp.com/fmt v1.0.0
 	webtyp.com/html v0.0.27
-	webtyp.com/idempotency v0.1.0
+	webtyp.com/idempotency v0.1.1
 	webtyp.com/json v0.5.30
 	webtyp.com/lang v0.1.7
 	webtyp.com/model v0.2.4
 	webtyp.com/orm v0.12.9
-	webtyp.com/outbox v0.1.0
+	webtyp.com/outbox v0.1.6
 	webtyp.com/router v0.4.3
 	webtyp.com/rpc v0.2.3
 	webtyp.com/storage v0.1.8

@@ -165,7 +165,7 @@ func Open(cfg ClientConfig) (*Client, error) {
 	}
 	c.ops = harvest(mods)
 	c.local = loopback.ActingAs(cfg.TenantID, cfg.UserID, mods...)
-	if c.box, err = outbox.New(c.raw, c.ids, func() int64 { return int64(cfg.Now()) }); err != nil {
+	if c.box, err = outbox.New(c.raw, c.ids, cfg.Now); err != nil {
 		return nil, err
 	}
 

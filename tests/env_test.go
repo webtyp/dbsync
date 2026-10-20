@@ -203,7 +203,7 @@ func newServer(t *testing.T) *server {
 
 // freshIdempotency gives the server a store that never saw any key (a standby server).
 func (s *server) freshIdempotency() {
-	idem, err := idempotency.New(orm.New(mem.New()), func() int64 { return int64(now()) })
+	idem, err := idempotency.New(orm.New(mem.New()), now)
 	if err != nil {
 		s.t.Fatalf("idempotency.New: %v", err)
 	}
