@@ -10,12 +10,13 @@ How it works, the protocol and its limits: [docs/ARCHITECTURE.md](docs/ARCHITECT
 ## Wiring
 
 ```go
-now := func() int64 { return time.Now().UnixNano() }
+now := time.NowNano                              // webtyp.com/time: the instant of each change
+nowInt := func() int64 { return int64(now()) } // idempotency still takes int64 nanoseconds
 
 // server
 log, _ := changelog.New(raw, config.SyncTableFactories()...)
 db := orm.New(log)
-store, _ := idempotency.New(db, now)
+store, _ := idempotency.New(db, nowInt)
 srv.Router().Use(store.Middleware())                           // before mounting routes
 _ = rpc.Mount(srv.Router(), rpc.DefaultPrefix, modules...)
 syncSrv, _ := dbsync.NewServer(dbsync.ServerConfig{DB: db, Log: log, Rules: config.SyncRules(), Authorize: authz, Now: now})
