@@ -9,7 +9,7 @@ require (
 	webtyp.com/dbsync v0.3.3
 	webtyp.com/dom v0.13.26
 	webtyp.com/idempotency v0.1.0
-	webtyp.com/model v0.2.3
+	webtyp.com/model v0.2.4
 	webtyp.com/orm v0.12.9
 	webtyp.com/router v0.4.3
 	webtyp.com/rpc v0.2.3
