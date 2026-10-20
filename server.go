@@ -2,6 +2,7 @@ package dbsync
 
 import (
 	"sync"
+	"webtyp.com/time"
 
 	"webtyp.com/changelog"
 	"webtyp.com/fmt"
@@ -25,7 +26,7 @@ type ServerConfig struct {
 	Log       *changelog.Log   // the change log wrapping the app's storage
 	Rules     []Rule           // the tables devices keep (the app's config/sync.go)
 	Authorize model.Authorizer // required: model.Read on Rule.Resource decides who receives a table
-	Now       func() int64     // unix ns; required
+	Now       func() time.Nano // required
 }
 
 // Server answers devices: replica numbers, the first copy, and the change feed.
@@ -35,7 +36,7 @@ type Server struct {
 	mu    sync.Mutex // serialises /register
 }
 
-// NewServer validates cfg. Its epoch is minted once here (decimal unix ns of Now() at start).
+// NewServer validates cfg. Its epoch is minted once here (the decimal nanosecond instant of Now() at start).
 func NewServer(cfg ServerConfig) (*Server, error) {
 	switch {
 	case cfg.DB == nil:
@@ -66,7 +67,7 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 			return nil, err
 		}
 	}
-	return &Server{cfg: cfg, epoch: fmt.Sprintf("%d", cfg.Now())}, nil
+	return &Server{cfg: cfg, epoch: fmt.Sprintf("%d", int64(cfg.Now()))}, nil
 }
 
 // ModelName makes Server a router.APIModule.

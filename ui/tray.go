@@ -23,7 +23,6 @@ const (
 const (
 	textDismiss     = lang.Text("Dismiss")
 	textNoConflicts = lang.Text("No conflicts")
-	variantDismiss  = "secondary"
 )
 
 var (
@@ -89,7 +88,7 @@ func (t *tray) row(m outbox.Mutation) *Element {
 	failure := NewString("")
 	dismiss := &actionbutton.ActionButton{
 		Text:    textDismiss,
-		Variant: variantDismiss,
+		Variant: actionbutton.Secondary,
 		OnClick: func(Event) {
 			if err := t.client.Dismiss(m.Id); err != nil {
 				failure.Set(err.Error())
@@ -97,7 +96,7 @@ func (t *tray) row(m outbox.Mutation) *Element {
 		},
 	}
 	return Div().Set(clsRow.AsAttr()).Key(m.Id).
-		Child(Span().Text(time.FormatDateTime(m.CreatedAt))).
+		Child(Span().Text(time.FormatDateTime(time.Nano(m.CreatedAt).Unix()))). // outbox still stores its instants as int64 nanoseconds
 		Child(Span().Text(m.Op)).
 		Child(Span().Set(clsReason.AsAttr()).Text(m.Reason)).
 		Child(Span().BindText(failure)).

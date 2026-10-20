@@ -23,7 +23,6 @@ const (
 	stateID          = "state"
 	requestTimeoutMs = 10000
 	syncEveryMs      = 30000
-	redeliverWindow  = int64(10 * 60 * 1000000000) // 10 min in ns
 	maxTouched       = 1000
 	statusOK         = 200
 )
@@ -37,9 +36,9 @@ type ClientConfig struct {
 	// Modules builds the offline modules over the local database and this device's ids.
 	Modules  func(db *orm.DB, ids model.IDGenerator) ([]router.OperationModule, error)
 	TenantID string
-	UserID   string       // the signed-in user (offline: the cached session)
-	Now      func() int64 // unix ns
-	Lock     TabLock      // nil = browser Web Locks (wasm); tests pass a fake
+	UserID   string // the signed-in user (offline: the cached session)
+	Now      func() wtime.Nano
+	Lock     TabLock // nil = browser Web Locks (wasm); tests pass a fake
 }
 
 // TabLock lets one tab of a browser profile own the local database.
@@ -166,7 +165,7 @@ func Open(cfg ClientConfig) (*Client, error) {
 	}
 	c.ops = harvest(mods)
 	c.local = loopback.ActingAs(cfg.TenantID, cfg.UserID, mods...)
-	if c.box, err = outbox.New(c.raw, c.ids, cfg.Now); err != nil {
+	if c.box, err = outbox.New(c.raw, c.ids, func() int64 { return int64(cfg.Now()) }); err != nil {
 		return nil, err
 	}
 
@@ -393,3 +392,6 @@ func (c *Client) op(name string) (opInfo, bool) {
 	}
 	return opInfo{}, false
 }
+
+// redeliverWindow is how old an unconfirmed mutation must be before it is sent again.
+var redeliverWindow = (10 * wtime.Minute).Nano()

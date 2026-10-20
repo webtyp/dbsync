@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	wtime "webtyp.com/time"
+
 	"webtyp.com/changelog"
 	"webtyp.com/dbsync"
 	"webtyp.com/idempotency"
@@ -159,7 +161,7 @@ func (m *notes) MountOperations(reg router.OperationRegistry) {
 	reg.Operation("purge_notes", func(ctx router.Context) { ctx.WriteStatus(204) }).Requires("note", model.Delete).RequiresMFA()
 }
 
-func now() int64 { return time.Now().UnixNano() }
+func now() wtime.Nano { return wtime.NowNano() }
 
 func allow(string, model.Resource, model.Action) bool { return true }
 
@@ -201,7 +203,7 @@ func newServer(t *testing.T) *server {
 
 // freshIdempotency gives the server a store that never saw any key (a standby server).
 func (s *server) freshIdempotency() {
-	idem, err := idempotency.New(orm.New(mem.New()), now)
+	idem, err := idempotency.New(orm.New(mem.New()), func() int64 { return int64(now()) })
 	if err != nil {
 		s.t.Fatalf("idempotency.New: %v", err)
 	}

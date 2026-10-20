@@ -26,7 +26,7 @@ var TouchedModel = model.Definition{
 		{Name: "mutation_id", Type: model.Text()},
 		{Name: "table_name", Type: model.Text()},
 		{Name: "row_id", Type: model.Text()},
-		{Name: "created_at", Type: model.Int()},
+		{Name: "created_at", Type: model.NanoTime()},
 	},
 }
 
@@ -37,6 +37,6 @@ var ReplicaModel = model.Definition{
 		{Name: "id", Type: model.Text(), DB: &model.FieldDB{PK: true}}, // decimal representation of Number
 		{Name: "number", Type: model.Int()},
 		{Name: "user_id", Type: model.Text()},
-		{Name: "created_at", Type: model.Int()},
+		{Name: "created_at", Type: model.NanoTime()},
 	},
 }

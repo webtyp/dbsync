@@ -86,7 +86,7 @@ func (c *Client) checkEpoch(epoch string) error {
 		return nil
 	}
 	if c.state.Epoch != "" {
-		if _, err := c.box.Redeliver(c.cfg.Now() - redeliverWindow); err != nil {
+		if _, err := c.box.Redeliver(int64(c.cfg.Now() - redeliverWindow)); err != nil {
 			return err
 		}
 	}
@@ -274,7 +274,7 @@ func (c *Client) bootstrap() error {
 // writes that no longer exist (dismissed or pruned).
 func (c *Client) prune() {
 	cutoff := c.cfg.Now() - redeliverWindow
-	if _, err := c.box.Prune(cutoff); err != nil {
+	if _, err := c.box.Prune(int64(cutoff)); err != nil {
 		return
 	}
 	old, err := ReadAllTouched(c.raw.Query(&Touched{}).Where(Touched_.CreatedAt).Lt(cutoff))
