@@ -34,7 +34,7 @@ require (
 	webtyp.com/filepath v0.1.0 // indirect
 	webtyp.com/fmt v1.0.0 // indirect
 	webtyp.com/font v0.0.5 // indirect
-	webtyp.com/html v0.0.27 // indirect
+	webtyp.com/html v0.0.28 // indirect
 	webtyp.com/json v0.5.30 // indirect
 	webtyp.com/lang v0.1.7 // indirect
 	webtyp.com/outbox v0.1.6 // indirect
