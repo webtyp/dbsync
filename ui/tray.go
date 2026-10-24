@@ -37,8 +37,9 @@ type tray struct {
 	client *dbsync.Client
 	mu     sync.Mutex // refresh runs on the sync goroutine and after a Dismiss
 	// refused and failed are the data the rows are built from; rows is the
-	// live list. Render seeds fresh rows from the data (as datatable does):
-	// the signal's elements already belong to the painted list.
+	// live list. Render builds a fresh signal from the data (as datatable does):
+	// the signal owns the list's children, and the previous signal's elements
+	// already belong to the painted list.
 	refused []outbox.Mutation
 	failed  error
 	shown   int // Status.Rejected at the last refresh; -1 forces one
@@ -109,15 +110,6 @@ func (t *tray) WidgetKind() widget.Kind { return widget.Region }
 func (t *tray) Render() *Element {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return Div().Set(clsTray.AsAttr()).
-		BindChildren(t.rows).
-		Child(toComponents(t.build())...)
-}
-
-func toComponents(els []*Element) []Component {
-	out := make([]Component, len(els))
-	for i, el := range els {
-		out[i] = el
-	}
-	return out
+	t.rows = NewNodes(t.build()...)
+	return Div().Set(clsTray.AsAttr()).BindChildren(t.rows)
 }
