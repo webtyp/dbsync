@@ -3,6 +3,8 @@ PLAN: "feat: changes reach every open screen — SSE «head moved» from the cha
 TAG: v0.3.11
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 11127215870619801806
 ---
 
 > Read AGENTS.md at the repo root before any change.
