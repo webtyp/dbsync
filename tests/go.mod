@@ -9,7 +9,7 @@ require (
 	webtyp.com/dbsync v0.3.10
 	webtyp.com/dom v0.13.29
 	webtyp.com/idempotency v0.1.1
-	webtyp.com/model v0.2.8
+	webtyp.com/model v0.2.9
 	webtyp.com/orm v0.12.9
 	webtyp.com/router v0.4.9
 	webtyp.com/rpc v0.2.3
@@ -27,7 +27,7 @@ require (
 	howett.net/plist v1.0.0 // indirect
 	webtyp.com/calendar v0.1.0 // indirect
 	webtyp.com/color v0.1.2 // indirect
-	webtyp.com/components v0.8.56 // indirect
+	webtyp.com/components v0.8.57 // indirect
 	webtyp.com/css v0.4.31 // indirect
 	webtyp.com/escape v0.1.0 // indirect
 	webtyp.com/fetch v0.1.29 // indirect
