@@ -84,5 +84,7 @@ webtyp.com/unixid v0.3.1 h1:qQBK0nWeTme94GPQl4Ixlo5dlmWI7ZByG0Xwsjqtyas=
 webtyp.com/unixid v0.3.1/go.mod h1:JHhFQ/vT5KoLq0CKwAMGadZyxTzuAyjgtGnXzRP28ac=
 webtyp.com/view v0.6.48 h1:PhOoSMcTCTFDQDyd/7PPHutzAzCQHgd3MMaJ9Jtcwl8=
 webtyp.com/view v0.6.48/go.mod h1:TWtEDlJkz33hc2PeKtIVLM2Z1f0Qf/tMBLU36OEXGdY=
+webtyp.com/view v0.6.49 h1:QubsKsr4BB+DoDwWSR0X2TvBrZwrkZGpbsxEwD5m5Yg=
+webtyp.com/view v0.6.49/go.mod h1:TWtEDlJkz33hc2PeKtIVLM2Z1f0Qf/tMBLU36OEXGdY=
 webtyp.com/widget v0.6.44 h1:mRip9Y4zTPd+/QzZ7DyUlm+679BEWKpDJVQ/I8fBxT4=
 webtyp.com/widget v0.6.44/go.mod h1:H45QZ+Di1muuit4vDlJC5OehiLT/NR483Es/KUq6C28=
