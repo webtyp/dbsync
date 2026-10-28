@@ -23,6 +23,7 @@ const (
 	errNowRequired     syncError = "dbsync: Now is required"
 	errTablesRequired  syncError = "dbsync: ClientConfig.Tables is empty"
 	errUserRequired    syncError = "dbsync: ClientConfig.UserID is required"
+	errRecordsRequired syncError = "dbsync: ClientConfig.Records is required"
 	errDBRequired      syncError = "dbsync: ServerConfig.DB is required"
 	errLogRequired     syncError = "dbsync: ServerConfig.Log is required"
 	errAuthzRequired   syncError = "dbsync: ServerConfig.Authorize is required"

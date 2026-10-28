@@ -1,10 +1,20 @@
 {
-  "languages": ["es"],
+  "languages": ["es", "zh", "hi", "ar", "pt", "fr", "de", "ru"],
   "keys": {
-    "Online": ["En línea"],
-    "Offline": ["Sin conexión"],
-    "Conflicts": ["Conflictos"],
-    "Dismiss": ["Descartar"],
-    "No conflicts": ["Sin conflictos"]
+    "Conflicts": ["Conflictos", "冲突", "टकराव", "نزاعات", "Conflitos", "Conflits", "Konflikte", "Конфликты"],
+    "Dismiss": ["Descartar", "解散", "खारिज करें", "رفض", "Descartar", "Rejeter", "Verwerfen", "Отклонить"],
+    "No conflicts": ["Sin conflictos", "无冲突", "कोई टकराव नहीं", "لا توجد نزاعات", "Sem conflitos", "Pas de conflits", "Keine Konflikte", "Нет конфликтов"],
+    "Offline": ["Sin conexión", "离线", "ऑफ़लाइन", "غير متصل", "Off-line", "Hors ligne", "Offline", "Не в сети"],
+    "Online": ["En línea", "在线", "ऑनलाइन", "متصل", "Online", "En ligne", "Online", "В сети"],
+    "created at": ["creado el", "创建于", "पर बनाया गया", "أنشئت في", "criado em", "créé à", "erstellt am", "создано в"],
+    "cursor": ["cursor", "游标", "कर्सर", "مؤشر", "cursor", "curseur", "Cursor", "курсор"],
+    "epoch": ["época", "纪元", "युग", "عصر", "época", "époque", "Epoche", "эпоха"],
+    "last minted": ["último acuñado", "最后铸造", "अंतिम मुद्रित", "آخر سكت", "último cunhado", "dernier frappé", "zuletzt geprägt", "последняя чеканка"],
+    "mutation id": ["id de mutación", "突变 ID", "उत्परिवर्तन आईडी", "معرف الطفرة", "id de mutação", "id de mutation", "Mutations-ID", "id мутации"],
+    "number": ["número", "数字", "संख्या", "رقم", "número", "numéro", "Nummer", "номер"],
+    "replica": ["réplica", "副本", "प्रतिकृति", "نسخة متماثلة", "réplica", "réplique", "Replik", "реплика"],
+    "row id": ["id de fila", "行 ID", "पंक्ति आईडी", "معرف الصف", "id de linha", "id de ligne", "Zeilen-ID", "id строки"],
+    "table name": ["nombre de la tabla", "表名", "तालिका का नाम", "اسم الجدول", "nome da tabela", "nom de la table", "Tabellenname", "имя таблицы"],
+    "user id": ["id de usuario", "用户 ID", "उपयोगकर्ता आईडी", "معرف المستخدم", "id do usuário", "id d'utilisateur", "Benutzer-ID", "id пользователя"]
   }
 }

@@ -15,6 +15,7 @@ import (
 	wtime "webtyp.com/time"
 
 	"webtyp.com/changelog"
+	"webtyp.com/view"
 	"webtyp.com/dbsync"
 	"webtyp.com/idempotency"
 	"webtyp.com/model"
@@ -67,6 +68,12 @@ func (n *Note) DecodeFields(r model.FieldReader) {
 		n.Text = v
 	}
 }
+func (n *Note) Item() model.Item {
+	return model.Item{
+		ID:    n.Id,
+		Label: n.Text,
+	}
+}
 
 // Other is tracked by the server's change log but has no sync rule.
 type Other struct{ Id string }
@@ -81,6 +88,11 @@ func (o *Other) EncodeFields(w model.FieldWriter) { w.String("id", o.Id) }
 func (o *Other) DecodeFields(r model.FieldReader) {
 	if v, ok := r.String("id"); ok {
 		o.Id = v
+	}
+}
+func (o *Other) Item() model.Item {
+	return model.Item{
+		ID: o.Id,
 	}
 }
 
@@ -176,6 +188,7 @@ type server struct {
 	fields func(string) ([]string, error)
 
 	fail503 atomic.Bool // answer 503 to create_note
+	noAuth  bool        // do not set UserID
 	mu      sync.Mutex
 	hits    []string // request paths seen
 	addr    string
@@ -215,7 +228,9 @@ func (s *server) handler() http.Handler {
 		TLS: httpd.TLSConfig{PlainHTTP: true},
 		Authn: func(next router.HandlerFunc) router.HandlerFunc {
 			return func(ctx router.Context) {
-				ctx.SetUserID(userID)
+				if !s.noAuth {
+					ctx.SetUserID(userID)
+				}
 				next(ctx)
 			}
 		},
@@ -314,10 +329,11 @@ func (l fakeLock) TryLock(string) (bool, error) { return l.free, nil }
 
 // device is one browser profile: its local database and its sync client.
 type device struct {
-	t     *testing.T
-	local storage.Conn
-	db    *orm.DB
-	c     *dbsync.Client
+	t       *testing.T
+	local   storage.Conn
+	db      *orm.DB
+	c       *dbsync.Client
+	records *view.Records
 }
 
 func config(s *server, local storage.Conn, lock dbsync.TabLock) dbsync.ClientConfig {
@@ -333,18 +349,20 @@ func config(s *server, local storage.Conn, lock dbsync.TabLock) dbsync.ClientCon
 		UserID:   userID,
 		Now:      now,
 		Lock:     lock,
+		Records:  view.NewRecords(),
 	}
 }
 
 func open(t *testing.T, s *server) *device {
 	t.Helper()
 	local := mem.New()
-	c, err := dbsync.Open(config(s, local, fakeLock{free: true}))
+	cfg := config(s, local, fakeLock{free: true})
+	c, err := dbsync.Open(cfg)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
 	t.Cleanup(func() { c.Close() })
-	return &device{t: t, local: local, db: orm.New(local), c: c}
+	return &device{t: t, local: local, db: orm.New(local), c: c, records: cfg.Records}
 }
 
 // call runs op through the device's Caller and waits for done.

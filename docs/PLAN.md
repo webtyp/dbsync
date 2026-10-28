@@ -3,8 +3,10 @@ PLAN: "feat: changes reach every open screen — SSE «head moved» from the cha
 TAG: v0.3.11
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 11127215870619801806
+PR: https://github.com/webtyp/dbsync/pull/3
+REVIEWED_COMMIT: 6a66a07c00252f72793e032b066fd8a2379fb893
 ---
 
 > Read AGENTS.md at the repo root before any change.

@@ -23,8 +23,9 @@ syncSrv.MountAPI(srv.Router())
 
 // browser (call Open from the composition root, never from a JavaScript event callback: it blocks)
 local, _ := indexdb.New("app", dbsync.LocalModels(config.SyncTables())...)
-client, err := dbsync.Open(dbsync.ClientConfig{Local: local, Remote: rpc.NewCaller(""), Tables: config.SyncTables(), Modules: config.OfflineModules, TenantID: t, UserID: u, Now: now})
+client, err := dbsync.Open(dbsync.ClientConfig{Local: local, Remote: rpc.NewCaller(""), Tables: config.SyncTables(), Modules: config.OfflineModules, TenantID: t, UserID: u, Now: now, Records: records})
 // views of offline modules get client.Caller(); forms get client.IDs(); the SSE reconnect calls client.Sync()
+// the server announces the head over SSE at /sync/events; the timer is the fallback.
 ```
 
 `config/sync.go` declares which tables each device keeps:

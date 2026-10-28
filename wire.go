@@ -12,6 +12,7 @@ const (
 	routeSnapshot = "/snapshot"
 	routePull     = "/pull"
 	routeRow      = "/row"
+	routeEvents   = "/events"
 
 	queryTable  = "table"
 	queryAfter  = "after"
@@ -30,6 +31,8 @@ const (
 	keyRowID   = "row_id"
 	keyOp      = "op"
 	keyRow     = "row"
+
+	channelHead = "head"
 
 	opUpsert = string(changelog.OpUpsert)
 	opDelete = string(changelog.OpDelete)

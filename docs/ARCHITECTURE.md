@@ -11,6 +11,10 @@
 | `webtyp.com/changelog` | server: versioned record of every write (the feed). Browser: which rows a local write touched |
 | `webtyp.com/unixid` | `<nanos>.<replica>` ids that never collide between devices |
 
+## Nudge
+
+The server announces the head over SSE at `/sync/events` without any data payload. This acts as a nudge for the client to sync, while `/pull` continues to enforce who sees what based on the rules.
+
 ## Write → queue → push → pull
 
 ```mermaid
