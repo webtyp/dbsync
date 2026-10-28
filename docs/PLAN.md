@@ -6,7 +6,7 @@ REVIEWER: none
 STATUS: review
 SESSION: 11127215870619801806
 PR: https://github.com/webtyp/dbsync/pull/3
-REVIEWED_COMMIT: 6461ac19bfa1b5e989de33869a7ebcf48c64a51e
+REVIEWED_COMMIT: 6a66a07c00252f72793e032b066fd8a2379fb893
 ---
 
 > Read AGENTS.md at the repo root before any change.
