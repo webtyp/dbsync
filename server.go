@@ -31,9 +31,10 @@ type ServerConfig struct {
 
 // Server answers devices: replica numbers, the first copy, and the change feed.
 type Server struct {
-	cfg   ServerConfig
-	epoch string
-	mu    sync.Mutex // serialises /register
+	serverEvents
+	cfg    ServerConfig
+	epoch  string
+	mu     sync.Mutex // serialises /register
 }
 
 // NewServer validates cfg. Its epoch is minted once here (the decimal nanosecond instant of Now() at start).
@@ -67,7 +68,10 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 			return nil, err
 		}
 	}
-	return &Server{cfg: cfg, epoch: fmt.Sprintf("%d", int64(cfg.Now()))}, nil
+	s := &Server{cfg: cfg, epoch: fmt.Sprintf("%d", int64(cfg.Now()))}
+	s.setupEvents()
+
+	return s, nil
 }
 
 // ModelName makes Server a router.APIModule.
@@ -82,6 +86,7 @@ func (s *Server) MountAPI(r router.Router) {
 		r.Get(routePull, s.pull).Authenticated().Describe("Changes after a cursor, filtered by the sync rules")
 		r.Get(routeRow, s.row).Authenticated().Describe("One row by id, to undo a rejected write on a device")
 	})
+	s.mountEvents(r)
 }
 
 func (s *Server) register(ctx router.Context) {

@@ -13,7 +13,109 @@ import (
 	"webtyp.com/dbsync"
 	"webtyp.com/storage"
 	"webtyp.com/storage/mem"
+	"webtyp.com/orm"
 )
+
+// 1
+func TestServer_PublishesHeadOnChange(t *testing.T) {
+	s := newServer(t)
+
+	// Since SSE stream blocks until timeout or disconnect, we start the request
+	// then trigger the event we want to see on the stream.
+
+	req, _ := http.NewRequest(http.MethodGet, s.url+"/api/dbsync/events", nil)
+
+	client := &http.Client{Timeout: 100 * time.Millisecond}
+
+	errChan := make(chan error, 1)
+	outChan := make(chan string, 1)
+
+	go func() {
+		resp, err := client.Do(req)
+		if err != nil {
+			errChan <- err
+			return
+		}
+		defer resp.Body.Close()
+		b, _ := io.ReadAll(resp.Body)
+		outChan <- string(b)
+	}()
+
+	time.Sleep(20 * time.Millisecond) // Give stream time to open
+	s.put(&Note{Id: "n1", Owner: userID, Text: "note 1"})
+
+	select {
+	case err := <-errChan:
+		if !strings.Contains(err.Error(), "Timeout") && !strings.Contains(err.Error(), "context deadline exceeded") {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	case out := <-outChan:
+		if !strings.Contains(out, "data: ") {
+			t.Fatalf("expected data: head in output, got: %s", out)
+		}
+	case <-time.After(500 * time.Millisecond):
+		t.Fatalf("timeout waiting for stream to close")
+	}
+}
+
+func TestServer_EventsNeedSession(t *testing.T) {
+	s := newServer(t)
+	s.noAuth = true
+
+	req, _ := http.NewRequest(http.MethodGet, s.url+"/api/dbsync/events", nil)
+	client := &http.Client{Timeout: 200 * time.Millisecond}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		if !strings.Contains(err.Error(), "Timeout") && !strings.Contains(err.Error(), "context deadline exceeded") {
+			t.Fatal(err)
+		}
+	} else {
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusUnauthorized && resp.StatusCode != http.StatusForbidden {
+			t.Fatalf("expected 401/403 for unauthenticated /events, got %d", resp.StatusCode)
+		}
+	}
+}
+
+func TestClient_OpenRequiresRecords(t *testing.T) {
+	s := newServer(t)
+	local := mem.New()
+	cfg := config(s, local, fakeLock{free: true})
+	cfg.Records = nil
+	_, err := dbsync.Open(cfg)
+	if err == nil || err.Error() != "dbsync: ClientConfig.Records is required" {
+		t.Fatalf("expected errRecordsRequired, got %v", err)
+	}
+}
+
+func TestClient_PullPutsRowsInRecords(t *testing.T) {
+	s := newServer(t)
+	d := open(t, s)
+
+	n1 := &Note{Id: "n1", Owner: userID, Text: "note 1"}
+	s.put(n1)
+	n2 := &Note{Id: "n2", Owner: userID, Text: "note 2"}
+	s.put(n2)
+
+	d.c.Sync()
+
+	eventually(t, d, "n1 in records", func() bool {
+		_, ok := d.records.Get(n1.ModelName(), n1.Id)
+		return ok
+	})
+
+	if err := s.db.Delete(n2, orm.Eq("id", n2.Id)); err != nil {
+		t.Fatal(err)
+	}
+	d.c.Sync()
+
+	eventually(t, d, "n2 removed from records", func() bool {
+		_, ok := d.records.Get(n2.ModelName(), n2.Id)
+		return !ok
+	})
+}
 
 // 1
 func TestBootstrapCopiesOnlyTheUsersRows(t *testing.T) {

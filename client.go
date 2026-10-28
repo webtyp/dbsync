@@ -16,6 +16,7 @@ import (
 	"webtyp.com/storage"
 	wtime "webtyp.com/time"
 	"webtyp.com/unixid"
+	"webtyp.com/view"
 )
 
 const (
@@ -39,6 +40,10 @@ type ClientConfig struct {
 	UserID   string // the signed-in user (offline: the cached session)
 	Now      func() wtime.Nano
 	Lock     TabLock // nil = browser Web Locks (wasm); tests pass a fake
+
+	// Records is the page's shared copy (view.NewRecords()); every pulled row is put
+	// there too, so the screens showing it change at once. Required.
+	Records *view.Records
 }
 
 // TabLock lets one tab of a browser profile own the local database.
@@ -108,6 +113,8 @@ func Open(cfg ClientConfig) (*Client, error) {
 		return nil, errTablesRequired
 	case cfg.UserID == "":
 		return nil, errUserRequired
+	case cfg.Records == nil:
+		return nil, errRecordsRequired
 	}
 	txc, ok := cfg.Local.(changelog.TxConn)
 	if !ok {

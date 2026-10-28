@@ -9,6 +9,8 @@ import (
 	"webtyp.com/outbox"
 	"webtyp.com/rpc"
 	wtime "webtyp.com/time"
+	"webtyp.com/view"
+	"errors"
 )
 
 const (
@@ -196,9 +198,13 @@ func (c *Client) pull() error {
 	}
 }
 
+type removedRow struct{ table, id string }
+
 func (c *Client) applyPage(w *pullWire) error {
+	var put []view.Record
+	var removed []removedRow
+
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	for _, ch := range w.changes {
 		f := factoryOf(c.cfg.Tables, ch.table)
 		if f == nil {
@@ -207,15 +213,41 @@ func (c *Client) applyPage(w *pullWire) error {
 		var err error
 		if ch.op == opUpsert && ch.row != nil {
 			err = c.upsert(f, ch.row)
+			if err == nil {
+				if rec, ok := ch.row.(view.Record); ok {
+					put = append(put, rec)
+				} else {
+					c.mu.Unlock()
+					return errors.New("dbsync: pulled row of " + ch.table + " has no Item(): its model needs Item: marks")
+				}
+			}
 		} else if ch.op == opDelete {
 			err = c.deleteLocal(f, ch.rowID)
+			if err == nil {
+				removed = append(removed, removedRow{ch.table, ch.rowID})
+			}
 		}
 		if err != nil {
+			c.mu.Unlock()
 			return err
 		}
 	}
 	c.state.Cursor = w.cursor
-	return c.saveState()
+	err := c.saveState()
+	c.mu.Unlock()
+
+	if err != nil {
+		return err
+	}
+
+	if len(put) > 0 {
+		c.cfg.Records.Put(put...)
+	}
+	for _, r := range removed {
+		c.cfg.Records.Remove(r.table, r.id)
+	}
+
+	return nil
 }
 
 // bootstrap copies every table the user may read, then starts the feed at the head read before
@@ -248,15 +280,25 @@ func (c *Client) bootstrap() error {
 			if err != nil {
 				return err
 			}
+			var put []view.Record
 			c.mu.Lock()
 			for _, row := range w.rows {
 				if err = c.upsert(f, row); err != nil {
+					break
+				}
+				if rec, ok := row.(view.Record); ok {
+					put = append(put, rec)
+				} else {
+					err = errors.New("dbsync: pulled row of " + table + " has no Item(): its model needs Item: marks")
 					break
 				}
 			}
 			c.mu.Unlock()
 			if err != nil {
 				return err
+			}
+			if len(put) > 0 {
+				c.cfg.Records.Put(put...)
 			}
 			if w.next == "" {
 				break
