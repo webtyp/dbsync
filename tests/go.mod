@@ -8,7 +8,7 @@ require (
 	webtyp.com/changelog v0.2.6
 	webtyp.com/dbsync v0.3.15
 	webtyp.com/dom v0.13.29
-	webtyp.com/idempotency v0.1.3
+	webtyp.com/idempotency v0.1.4
 	webtyp.com/model v0.2.10
 	webtyp.com/orm v0.12.20
 	webtyp.com/router v0.4.12
