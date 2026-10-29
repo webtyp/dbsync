@@ -11,9 +11,9 @@ require (
 	webtyp.com/idempotency v0.1.3
 	webtyp.com/model v0.2.10
 	webtyp.com/orm v0.12.20
-	webtyp.com/router v0.4.9
+	webtyp.com/router v0.4.12
 	webtyp.com/rpc v0.2.7
-	webtyp.com/server v0.2.86
+	webtyp.com/server v0.2.99
 	webtyp.com/storage v0.1.8
 	webtyp.com/time v0.6.2
 	webtyp.com/view v0.6.50
