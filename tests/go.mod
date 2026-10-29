@@ -16,7 +16,7 @@ require (
 	webtyp.com/server v0.2.86
 	webtyp.com/storage v0.1.8
 	webtyp.com/time v0.6.2
-	webtyp.com/view v0.6.49
+	webtyp.com/view v0.6.50
 	webtyp.com/widget v0.6.45
 )
 
@@ -37,7 +37,7 @@ require (
 	webtyp.com/fmt v1.0.0 // indirect
 	webtyp.com/font v0.0.5 // indirect
 	webtyp.com/html v0.0.30 // indirect
-	webtyp.com/json v0.5.30 // indirect
+	webtyp.com/json v0.5.36 // indirect
 	webtyp.com/lang v0.1.10 // indirect
 	webtyp.com/outbox v0.1.6 // indirect
 	webtyp.com/pwa v0.2.13 // indirect
