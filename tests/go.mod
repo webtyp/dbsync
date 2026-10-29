@@ -16,7 +16,7 @@ require (
 	webtyp.com/server v0.2.99
 	webtyp.com/storage v0.1.8
 	webtyp.com/time v0.6.2
-	webtyp.com/view v0.6.50
+	webtyp.com/view v0.6.53
 	webtyp.com/widget v0.6.45
 )
 
