@@ -14,11 +14,11 @@ require (
 	webtyp.com/idempotency v0.1.3
 	webtyp.com/json v0.5.37
 	webtyp.com/lang v0.1.9
-	webtyp.com/model v0.2.9
+	webtyp.com/model v0.2.10
 	webtyp.com/orm v0.12.9
 	webtyp.com/outbox v0.1.6
 	webtyp.com/router v0.4.9
-	webtyp.com/rpc v0.2.6
+	webtyp.com/rpc v0.2.7
 	webtyp.com/sse v0.2.30
 	webtyp.com/storage v0.1.8
 	webtyp.com/time v0.6.2

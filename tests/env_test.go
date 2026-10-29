@@ -238,7 +238,7 @@ func (s *server) handler() http.Handler {
 	})
 	r := srv.Router()
 	r.Use(s.idem.Middleware()) // before mounting the routes
-	if err := rpc.Mount(r, rpc.DefaultPrefix, &notes{db: s.db, server: true, calls: &s.calls}); err != nil {
+	if err := rpc.Mount(r, rpc.DefaultPrefix, nil, &notes{db: s.db, server: true, calls: &s.calls}); err != nil {
 		s.t.Fatalf("rpc.Mount: %v", err)
 	}
 	syncSrv, err := dbsync.NewServer(dbsync.ServerConfig{
