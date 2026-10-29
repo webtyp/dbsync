@@ -18,7 +18,7 @@ require (
 	webtyp.com/orm v0.12.20
 	webtyp.com/outbox v0.1.6
 	webtyp.com/router v0.4.16
-	webtyp.com/rpc v0.2.10
+	webtyp.com/rpc v0.2.13
 	webtyp.com/sse v0.2.30
 	webtyp.com/storage v0.1.8
 	webtyp.com/time v0.6.2
