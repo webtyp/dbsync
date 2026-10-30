@@ -4,16 +4,16 @@ go 1.26.8
 
 require (
 	webtyp.com/changelog v0.2.6
-	webtyp.com/components v0.8.51
+	webtyp.com/components v0.8.57
 	webtyp.com/css v0.4.31
 	webtyp.com/ddl v0.0.36
 	webtyp.com/dom v0.13.29
 	webtyp.com/fetch v0.1.29
 	webtyp.com/fmt v1.0.0
-	webtyp.com/html v0.0.29
+	webtyp.com/html v0.0.30
 	webtyp.com/idempotency v0.1.4
 	webtyp.com/json v0.5.37
-	webtyp.com/lang v0.1.9
+	webtyp.com/lang v0.1.10
 	webtyp.com/model v0.2.12
 	webtyp.com/orm v0.12.20
 	webtyp.com/outbox v0.1.6

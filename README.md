@@ -55,7 +55,7 @@ func SyncRules() []dbsync.Rule {
 |---|---|---|
 | `Rule{Model, Resource, Scope, Fields}` | both | one table devices keep; `model.Read` on `Resource` and `Scope` (AND-joined conditions) decide which rows a user receives; `Fields` which columns (the primary key always travels) |
 | `NewServer(ServerConfig)` / `MountAPI` | server | `/api/dbsync/register`, `/head`, `/snapshot`, `/pull`, `/row` |
-| `migrate.Migrate` | server | creates `dbsync_replica` |
+| `migrate.Migrate` | server | creates `dbsync_replica` with `ddl.Sync` ([flow](https://github.com/webtyp/ddl/blob/main/docs/diagrams/SYNC_FLOW.md)) |
 | `LocalModels(tables)` | browser | every table the local database must have |
 | `Open(ClientConfig)` | browser | tab lock, replica number, first copy, background sync |
 | `Client.Caller()` / `IDs()` | browser | what views and forms use |
