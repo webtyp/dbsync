@@ -3,7 +3,7 @@ module webtyp.com/dbsync
 go 1.26.8
 
 require (
-	webtyp.com/changelog v0.2.6
+	webtyp.com/changelog v0.2.14
 	webtyp.com/components v0.8.57
 	webtyp.com/css v0.4.31
 	webtyp.com/ddl v0.0.36
