@@ -5,7 +5,7 @@ go 1.26.8
 replace webtyp.com/dbsync => ../
 
 require (
-	webtyp.com/changelog v0.2.6
+	webtyp.com/changelog v0.2.14
 	webtyp.com/dbsync v0.3.29
 	webtyp.com/ddl v0.0.36
 	webtyp.com/dom v0.13.29
