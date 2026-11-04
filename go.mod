@@ -4,7 +4,7 @@ go 1.26.8
 
 require (
 	webtyp.com/changelog v0.2.14
-	webtyp.com/components v0.8.57
+	webtyp.com/components v0.8.63
 	webtyp.com/css v0.4.31
 	webtyp.com/ddl v0.0.39
 	webtyp.com/dom v0.13.29
