@@ -16,7 +16,7 @@ require (
 	webtyp.com/rpc v0.2.14
 	webtyp.com/server v0.2.105
 	webtyp.com/storage v0.1.18
-	webtyp.com/time v0.6.2
+	webtyp.com/time v0.6.3
 	webtyp.com/view v0.6.53
 	webtyp.com/widget v0.6.46
 )
