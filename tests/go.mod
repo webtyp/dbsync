@@ -37,7 +37,7 @@ require (
 	howett.net/plist v1.0.0 // indirect
 	webtyp.com/calendar v0.1.0 // indirect
 	webtyp.com/color v0.1.2 // indirect
-	webtyp.com/components v0.8.57 // indirect
+	webtyp.com/components v0.8.63 // indirect
 	webtyp.com/css v0.4.31 // indirect
 	webtyp.com/escape v0.1.0 // indirect
 	webtyp.com/events v0.1.0 // indirect
