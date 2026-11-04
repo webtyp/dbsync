@@ -21,7 +21,7 @@ require (
 	webtyp.com/rpc v0.2.14
 	webtyp.com/sse v0.2.30
 	webtyp.com/storage v0.1.18
-	webtyp.com/time v0.6.3
+	webtyp.com/time v0.6.4
 	webtyp.com/unixid v0.3.1
 	webtyp.com/view v0.6.53
 	webtyp.com/widget v0.6.46
