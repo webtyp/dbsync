@@ -97,7 +97,8 @@ func (t *tray) row(m outbox.Mutation) *Element {
 		},
 	}
 	return Div().Set(clsRow.AsAttr()).Key(m.Id).
-		Child(Span().Text(time.FormatDateTime(m.CreatedAt.Unix()))).
+		// the user's own clock: these are changes this user made on this device
+		Child(Span().Text(time.MachineZone().DateTime(m.CreatedAt.Unix()))).
 		Child(Span().Text(m.Op)).
 		Child(Span().Set(clsReason.AsAttr()).Text(m.Reason)).
 		Child(Span().BindText(failure)).
