@@ -2,8 +2,10 @@
 PLAN: "refactor: sync tray shows when the change was made on the user's own clock (time.MachineZone)"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 6678894684707184598
+PR: https://github.com/webtyp/dbsync/pull/5
+REVIEWED_COMMIT: 47604a06f2c2ca088a1da5e13caa607df31dbc14
 ---
 
 > Read AGENTS.md at the repo root before any change.
