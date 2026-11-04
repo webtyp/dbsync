@@ -2,6 +2,8 @@
 PLAN: "refactor: sync tray shows when the change was made on the user's own clock (time.MachineZone)"
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 6678894684707184598
 ---
 
 > Read AGENTS.md at the repo root before any change.
