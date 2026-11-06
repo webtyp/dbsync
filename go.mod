@@ -13,7 +13,7 @@ require (
 	webtyp.com/html v0.0.30
 	webtyp.com/idempotency v0.1.4
 	webtyp.com/json v0.5.37
-	webtyp.com/lang v0.1.12
+	webtyp.com/lang v0.1.13
 	webtyp.com/model v0.2.12
 	webtyp.com/orm v0.12.25
 	webtyp.com/outbox v0.1.6
