@@ -66,7 +66,7 @@ func TestTrayListsRefusedWritesUntilDismissed(t *testing.T) {
 
 	d.create("taken")
 	eventually(t, d, "write refused", func() bool { return d.c.Status().Rejected == 1 })
-	mustContain(t, render(t, tray), "taken", "notes.create_note", "Dismiss")
+	mustContain(t, render(t, tray), "taken", "notes.note_c", "Dismiss")
 
 	refused, err := d.c.Rejected()
 	if err != nil || len(refused) != 1 {

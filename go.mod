@@ -5,6 +5,7 @@ go 1.26.8
 require (
 	webtyp.com/changelog v0.2.14
 	webtyp.com/components v0.8.63
+	webtyp.com/crud v0.0.2
 	webtyp.com/css v0.4.31
 	webtyp.com/ddl v0.0.46
 	webtyp.com/dom v0.13.29
@@ -14,7 +15,7 @@ require (
 	webtyp.com/idempotency v0.1.4
 	webtyp.com/json v0.5.40
 	webtyp.com/lang v0.1.14
-	webtyp.com/model v0.2.12
+	webtyp.com/model v0.2.13
 	webtyp.com/orm v0.12.26
 	webtyp.com/outbox v0.1.6
 	webtyp.com/router v0.4.17
@@ -35,3 +36,13 @@ require (
 	webtyp.com/filepath v0.1.0 // indirect
 	webtyp.com/font v0.0.5 // indirect
 )
+
+replace webtyp.com/model => ../model
+
+replace webtyp.com/router => ../router
+
+replace webtyp.com/crud => ../crud
+
+replace webtyp.com/rpc => ../rpc
+
+replace webtyp.com/view => ../view

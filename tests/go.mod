@@ -6,11 +6,12 @@ replace webtyp.com/dbsync => ../
 
 require (
 	webtyp.com/changelog v0.2.14
+	webtyp.com/crud v0.0.2
 	webtyp.com/dbsync v0.3.46
 	webtyp.com/ddl v0.0.46
 	webtyp.com/dom v0.13.29
 	webtyp.com/idempotency v0.1.4
-	webtyp.com/model v0.2.12
+	webtyp.com/model v0.2.13
 	webtyp.com/orm v0.12.26
 	webtyp.com/router v0.4.17
 	webtyp.com/rpc v0.2.14
@@ -53,3 +54,13 @@ require (
 	webtyp.com/sse v0.2.51 // indirect
 	webtyp.com/unixid v0.3.1 // indirect
 )
+
+replace webtyp.com/model => ../../model
+
+replace webtyp.com/router => ../../router
+
+replace webtyp.com/crud => ../../crud
+
+replace webtyp.com/rpc => ../../rpc
+
+replace webtyp.com/view => ../../view

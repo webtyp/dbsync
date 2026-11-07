@@ -113,7 +113,11 @@ func (s sender) Send(m *outbox.Mutation) outbox.Result {
 		return outbox.Result{Verdict: outbox.Retry, Reason: err.Error()}
 	}
 	s.c.online.Store(e.Status != 0)
-	return outbox.Result{Verdict: verdict(e), Reason: e.Body}
+	reason := e.Detail
+	if reason == "" {
+		reason = e.Body
+	}
+	return outbox.Result{Verdict: verdict(e), Reason: reason}
 }
 
 // verdict: no answer, still running, auth, throttling and server errors are retried; any other

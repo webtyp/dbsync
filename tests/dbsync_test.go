@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"webtyp.com/crud"
 	"webtyp.com/dbsync"
+	"webtyp.com/orm"
 	"webtyp.com/storage"
 	"webtyp.com/storage/mem"
-	"webtyp.com/orm"
 )
 
 // 1
@@ -203,7 +204,7 @@ func TestRejectedWriteIsUndoneLocallyAndListed(t *testing.T) {
 		return d.c.Status().Rejected == 1 && !local
 	})
 	rej, err := d.c.Rejected()
-	if err != nil || len(rej) != 1 || rej[0].Reason != "taken" || rej[0].Op != "notes.create_note" {
+	if err != nil || len(rej) != 1 || rej[0].Reason != "taken" || rej[0].Op != "notes.note_c" {
 		t.Fatalf("Rejected() = %+v, %v", rej, err)
 	}
 
@@ -224,7 +225,12 @@ func TestRejectedUpdateRestoresTheServersRow(t *testing.T) {
 	s.put(&Note{Id: "n1", Owner: userID, Text: "a"})
 	d := open(t, s)
 
-	if err := d.call("notes.update_note", &Note{Id: "n1", Owner: userID, Text: "locked"}); err != nil {
+	updateArgs := &crud.UpdateArgs{
+		IDs:    []string{"n1"},
+		Fields: []string{"text"},
+		Record: &Note{Id: "n1", Owner: userID, Text: "locked"},
+	}
+	if err := d.call("notes.note_u", updateArgs); err != nil {
 		t.Fatalf("update_note: %v", err)
 	}
 	if n, _ := d.note("n1"); n == nil || n.Text != "locked" {
@@ -234,7 +240,7 @@ func TestRejectedUpdateRestoresTheServersRow(t *testing.T) {
 		n, _ := d.note("n1")
 		return n != nil && n.Text == "a" && d.c.Status().Rejected == 1
 	})
-	if rej, _ := d.c.Rejected(); len(rej) != 1 || rej[0].Reason != "locked" {
+	if rej, _ := d.c.Rejected(); len(rej) != 1 || rej[0].Reason != "locked" || rej[0].Op != "notes.note_u" {
 		t.Fatalf("Rejected() = %+v", rej)
 	}
 }
@@ -348,14 +354,14 @@ func TestFirstRunNeedsTheServer(t *testing.T) {
 func TestOnlyDeclaredOperationsRunOffline(t *testing.T) {
 	s := newServer(t)
 	d := open(t, s)
-	for _, op := range []string{"notes.nope", "notes.ping", "notes.purge_notes"} {
+	for _, op := range []string{"notes.nope", "notes.note_d"} {
 		err := d.call(op, &Note{})
 		if err == nil || !strings.Contains(err.Error(), "is not an offline operation") {
 			t.Fatalf("%s: err = %v", op, err)
 		}
 	}
-	if err := d.call("notes.get_note", &Note{Id: "missing"}); err == nil {
-		t.Fatal("get_note of a missing note should fail locally")
+	if err := d.call("notes.note_r", &crud.ReadArgs{ID: "missing"}); err == nil {
+		t.Fatal("read of a missing note should fail locally")
 	}
 }
 

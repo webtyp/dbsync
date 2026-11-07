@@ -3,6 +3,7 @@
 package tests
 
 import (
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -15,7 +16,7 @@ import (
 	wtime "webtyp.com/time"
 
 	"webtyp.com/changelog"
-	"webtyp.com/view"
+	"webtyp.com/crud"
 	"webtyp.com/dbsync"
 	"webtyp.com/idempotency"
 	"webtyp.com/model"
@@ -25,12 +26,13 @@ import (
 	"webtyp.com/server/httpd"
 	"webtyp.com/storage"
 	"webtyp.com/storage/mem"
+	"webtyp.com/view"
 )
 
 const (
 	userID         = "u1"
 	otherUser      = "u2"
-	pathCreateNote = "/api/notes/create_note"
+	pathCreateNote = "/api/notes/note_c"
 	pathPull       = "/api/dbsync/pull"
 	waitFor        = 5 * time.Second
 )
@@ -111,66 +113,49 @@ type notes struct {
 
 func (m *notes) ModelName() string { return "notes" }
 
-func (m *notes) MountOperations(reg router.OperationRegistry) {
-	reg.Operation("create_note", func(ctx router.Context) {
-		var n Note
-		if err := ctx.Decode(&n); err != nil {
-			ctx.WriteStatus(400)
-			return
+func (m *notes) MountOperations(reg crud.Registry) {
+	reg.Create(func() model.ModelSlice { return &NoteList{} }, func(c crud.Caller, list model.ModelSlice) error {
+		nl := list.(*NoteList)
+		for _, n := range *nl {
+			if m.calls != nil {
+				m.calls.Add(1)
+			}
+			if m.server && n.Text == "taken" {
+				return model.Conflict("taken")
+			}
+			if err := m.db.Create(n); err != nil {
+				return err
+			}
 		}
-		if m.calls != nil {
-			m.calls.Add(1)
-		}
-		if m.server && n.Text == "taken" {
-			ctx.WriteStatus(409)
-			ctx.Write([]byte("taken"))
-			return
-		}
-		if err := m.db.Create(&n); err != nil {
-			ctx.WriteStatus(500)
-			ctx.Write([]byte(err.Error()))
-			return
-		}
-		ctx.Encode(&n)
-	}).Requires("note", model.Create)
+		return nil
+	})
 
-	reg.Operation("update_note", func(ctx router.Context) {
-		var n Note
-		if err := ctx.Decode(&n); err != nil {
-			ctx.WriteStatus(400)
-			return
-		}
+	reg.Update(func() model.Model { return &Note{} }, func(c crud.Caller, ids, fields []string, rec model.Model) error {
+		n := rec.(*Note)
 		if m.server && n.Text == "locked" {
-			ctx.WriteStatus(409)
-			ctx.Write([]byte("locked"))
-			return
+			return model.Conflict("locked")
 		}
-		if err := m.db.Update(&n, orm.Eq("id", n.Id)); err != nil {
-			ctx.WriteStatus(500)
-			ctx.Write([]byte(err.Error()))
-			return
+		for _, id := range ids {
+			n.Id = id
+			if err := m.db.Update(n, orm.Eq("id", id)); err != nil {
+				return err
+			}
 		}
-		ctx.Encode(&n)
-	}).Requires("note", model.Update)
+		return nil
+	})
 
-	reg.Operation("get_note", func(ctx router.Context) {
+	reg.Read(&Note{}, nil, func(c crud.Caller, args crud.ReadArgs, filter model.Model) (model.ModelSlice, error) {
 		var n Note
-		if err := ctx.Decode(&n); err != nil {
-			ctx.WriteStatus(400)
-			return
+		if err := m.db.Query(&n).Where("id").Eq(args.ID).ReadOne(); err != nil {
+			return nil, errors.New("not found")
 		}
-		if err := m.db.Query(&n).Where("id").Eq(n.Id).ReadOne(); err != nil {
-			ctx.WriteStatus(404)
-			return
-		}
-		ctx.Encode(&n)
-	}).Requires("note", model.Read)
+		out := NoteList{&n}
+		return &out, nil
+	})
 
-	reg.Operation("ping", func(ctx router.Context) { ctx.WriteStatus(204) }).Public()
-
-	// purge_notes demands a second factor: an offline replay cannot prove one,
-	// so dbsync must refuse to run it offline even though it declares Requires.
-	reg.Operation("purge_notes", func(ctx router.Context) { ctx.WriteStatus(204) }).Requires("note", model.Delete).RequiresMFA()
+	reg.Delete(&Note{}, func(c crud.Caller, ids []string) error {
+		return nil
+	}).RequiresMFA()
 }
 
 func now() wtime.Nano { return wtime.NowNano() }
@@ -238,7 +223,7 @@ func (s *server) handler() http.Handler {
 	})
 	r := srv.Router()
 	r.Use(s.idem.Middleware()) // before mounting the routes
-	if err := rpc.Mount(r, rpc.DefaultPrefix, nil, &notes{db: s.db, server: true, calls: &s.calls}); err != nil {
+	if err := rpc.Mount(r, rpc.DefaultPrefix, nil, nil, &notes{db: s.db, server: true, calls: &s.calls}); err != nil {
 		s.t.Fatalf("rpc.Mount: %v", err)
 	}
 	syncSrv, err := dbsync.NewServer(dbsync.ServerConfig{
@@ -342,8 +327,8 @@ func config(s *server, local storage.Conn, lock dbsync.TabLock) dbsync.ClientCon
 		Remote: rpc.NewCaller(s.url),
 		Origin: s.url,
 		Tables: tables,
-		Modules: func(db *orm.DB, _ model.IDGenerator) ([]router.OperationModule, error) {
-			return []router.OperationModule{&notes{db: db}}, nil
+		Modules: func(db *orm.DB, _ model.IDGenerator) ([]crud.Module, error) {
+			return []crud.Module{&notes{db: db}}, nil
 		},
 		TenantID: "t1",
 		UserID:   userID,
@@ -366,10 +351,10 @@ func open(t *testing.T, s *server) *device {
 }
 
 // call runs op through the device's Caller and waits for done.
-func (d *device) call(op string, n *Note) error {
+func (d *device) call(op string, args model.Encodable) error {
 	d.t.Helper()
 	ch := make(chan error, 1)
-	d.c.Caller().Call(op, n, nil, func(err error) { ch <- err })
+	d.c.Caller().Call(op, args, nil, func(err error) { ch <- err })
 	select {
 	case err := <-ch:
 		return err
@@ -382,7 +367,8 @@ func (d *device) call(op string, n *Note) error {
 func (d *device) create(text string) *Note {
 	d.t.Helper()
 	n := &Note{Id: d.c.IDs().NewID(), Owner: userID, Text: text}
-	if err := d.call("notes.create_note", n); err != nil {
+	args := &crud.CreateArgs{Records: []model.Model{n}}
+	if err := d.call("notes.note_c", args); err != nil {
 		d.t.Fatalf("create_note: %v", err)
 	}
 	return n

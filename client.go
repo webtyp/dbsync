@@ -5,13 +5,13 @@ import (
 	"sync/atomic"
 
 	"webtyp.com/changelog"
+	"webtyp.com/crud"
 	"webtyp.com/fetch"
 	"webtyp.com/json"
 	"webtyp.com/model"
 	"webtyp.com/orm"
 	"webtyp.com/outbox"
 	"webtyp.com/router"
-	"webtyp.com/router/loopback"
 	"webtyp.com/rpc"
 	"webtyp.com/storage"
 	wtime "webtyp.com/time"
@@ -35,7 +35,7 @@ type ClientConfig struct {
 	Origin string               // "" = same origin, for dbsync's own endpoints
 	Tables []func() model.Model // the same factories as the server Rules (decode pulled rows)
 	// Modules builds the offline modules over the local database and this device's ids.
-	Modules  func(db *orm.DB, ids model.IDGenerator) ([]router.OperationModule, error)
+	Modules  func(db *orm.DB, ids model.IDGenerator) ([]crud.Module, error)
 	TenantID string
 	UserID   string // the signed-in user (offline: the cached session)
 	Now      func() wtime.Nano
@@ -170,8 +170,10 @@ func Open(cfg ClientConfig) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.ops = harvest(mods)
-	c.local = loopback.ActingAs(cfg.TenantID, cfg.UserID, mods...)
+	if c.ops, err = harvest(mods); err != nil {
+		return nil, err
+	}
+	c.local = crud.LoopbackActingAs(cfg.UserID, mods...)
 	if c.box, err = outbox.New(c.raw, c.ids, cfg.Now); err != nil {
 		return nil, err
 	}
@@ -356,16 +358,18 @@ type harvester struct {
 	ops    []opInfo
 }
 
-func harvest(mods []router.OperationModule) []opInfo {
+func harvest(mods []crud.Module) ([]opInfo, error) {
 	h := &harvester{}
 	for _, m := range mods {
 		if m == nil {
 			continue
 		}
 		h.module = m.ModelName()
-		m.MountOperations(h)
+		if err := crud.Mount(h, nil, m); err != nil {
+			return nil, err
+		}
 	}
-	return h.ops
+	return h.ops, nil
 }
 
 func (h *harvester) Operation(name string, _ router.HandlerFunc) router.Route {
