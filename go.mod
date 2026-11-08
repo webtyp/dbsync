@@ -15,7 +15,7 @@ require (
 	webtyp.com/idempotency v0.1.4
 	webtyp.com/json v0.5.40
 	webtyp.com/lang v0.1.16
-	webtyp.com/model v0.2.14
+	webtyp.com/model v0.2.15
 	webtyp.com/orm v0.12.26
 	webtyp.com/outbox v0.1.6
 	webtyp.com/router v0.4.19
