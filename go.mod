@@ -21,7 +21,7 @@ require (
 	webtyp.com/router v0.4.19
 	webtyp.com/rpc v0.2.17
 	webtyp.com/sse v0.2.51
-	webtyp.com/storage v0.1.18
+	webtyp.com/storage v0.1.19
 	webtyp.com/time v0.6.4
 	webtyp.com/unixid v0.3.1
 	webtyp.com/view v0.6.66
