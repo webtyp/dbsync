@@ -9,7 +9,7 @@ require (
 	webtyp.com/css v0.4.31
 	webtyp.com/ddl v0.0.46
 	webtyp.com/dom v0.13.29
-	webtyp.com/fetch v0.1.29
+	webtyp.com/fetch v0.1.30
 	webtyp.com/fmt v1.0.0
 	webtyp.com/html v0.0.30
 	webtyp.com/idempotency v0.1.4
