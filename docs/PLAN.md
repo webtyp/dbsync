@@ -2,8 +2,6 @@
 PLAN: "refactor!: offline operations are router.Operation; the queue stores Operation.String(); the Caller and the harvester take the typed operation"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
-SESSION: 11116518669418616881
 ---
 
 > Read AGENTS.md at the repo root before any change.
@@ -76,6 +74,8 @@ Everything else in `handler()` stays (`r.Use(s.idem.Middleware())`, `rpc.Mount`,
 | `crud.Op(&Rec{}, model.Read)` (a string) | `router.Operation{Module: "<ModelName()>", Entity: "<entity ModelName()>", Action: model.Read}` |
 | `crud.Mount(reg, public, m)` | `crud.Mount(reg, public, nil, m)` (the new third argument is the `events.Publisher`; `nil` = nobody listens) |
 | `crud.Loopback(m...)`, `crud.LoopbackActingAs(id, m...)` | `crud.Loopback(nil, m...)`, `crud.LoopbackActingAs(nil, id, m...)` |
+
+**The `Store` of a fixture is `orm.GlobalStore(db, ids)` (or `orm.TenantStore`) from `orm` v0.12.31: it already is a `crud.Store`. Never write a `Store` wrapper, and never ask whether to: the fixtures follow this section.**
 
 `Definition()` for the two usual fixtures:
 
