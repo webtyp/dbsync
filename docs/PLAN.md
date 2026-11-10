@@ -2,6 +2,8 @@
 PLAN: "refactor!: offline operations are router.Operation; the queue stores Operation.String(); the Caller and the harvester take the typed operation"
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 520732087265803628
 ---
 
 > Read AGENTS.md at the repo root before any change.
