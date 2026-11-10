@@ -16,7 +16,7 @@ func (c *Client) Caller() router.Caller { return offlineCaller{c: c} }
 type offlineCaller struct{ c *Client }
 
 // Call never blocks its caller: the work runs in its own goroutine and done is called from there.
-func (o offlineCaller) Call(op string, args model.Encodable, into model.Decodable, done func(err error)) {
+func (o offlineCaller) Call(op router.Operation, args model.Encodable, into model.Decodable, done func(err error)) {
 	go func() {
 		err := o.c.call(op, args, into)
 		if done != nil {
@@ -25,9 +25,9 @@ func (o offlineCaller) Call(op string, args model.Encodable, into model.Decodabl
 	}()
 }
 
-func (o offlineCaller) Dispatch(op string, args model.Encodable) { o.Call(op, args, nil, nil) }
+func (o offlineCaller) Dispatch(op router.Operation, args model.Encodable) { o.Call(op, args, nil, nil) }
 
-func (c *Client) call(op string, args model.Encodable, into model.Decodable) error {
+func (c *Client) call(op router.Operation, args model.Encodable, into model.Decodable) error {
 	info, ok := c.op(op)
 	if !ok {
 		return errNotOfflineOp(op)
@@ -43,7 +43,7 @@ func (c *Client) call(op string, args model.Encodable, into model.Decodable) err
 }
 
 // runLocal runs op on the local modules (loopback answers synchronously).
-func (c *Client) runLocal(op string, args model.Encodable, into model.Decodable) error {
+func (c *Client) runLocal(op router.Operation, args model.Encodable, into model.Decodable) error {
 	var out error
 	c.local.Call(op, args, into, func(err error) { out = err })
 	return out
@@ -51,7 +51,7 @@ func (c *Client) runLocal(op string, args model.Encodable, into model.Decodable)
 
 // write runs op locally, queues it, and records which rows it touched (to undo it if the server
 // rejects it).
-func (c *Client) write(op string, args model.Encodable, into model.Decodable) error {
+func (c *Client) write(op router.Operation, args model.Encodable, into model.Decodable) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -70,7 +70,7 @@ func (c *Client) write(op string, args model.Encodable, into model.Decodable) er
 			return err
 		}
 	}
-	id, err := c.box.Enqueue(outbox.Entry{Op: op, Payload: payload})
+	id, err := c.box.Enqueue(outbox.Entry{Op: op.String(), Payload: payload})
 	if err != nil {
 		return err
 	}

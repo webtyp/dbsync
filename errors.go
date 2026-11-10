@@ -1,6 +1,9 @@
 package dbsync
 
-import "webtyp.com/fmt"
+import (
+	"webtyp.com/fmt"
+	"webtyp.com/router"
+)
 
 type syncError string
 
@@ -40,7 +43,9 @@ const (
 	msgServerAnswered = "dbsync: server answered %d to %s: %s"
 )
 
-func errNotOfflineOp(op string) error { return syncError(fmt.Sprintf(msgNotOfflineOp, op)) }
+func errNotOfflineOp(op router.Operation) error {
+	return syncError(fmt.Sprintf(msgNotOfflineOp, op.String()))
+}
 
 func errScopeOperator(op string) error { return syncError(fmt.Sprintf(msgScopeOperator, op)) }
 

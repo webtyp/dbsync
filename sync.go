@@ -1,16 +1,17 @@
 package dbsync
 
 import (
+	"errors"
 	"webtyp.com/fetch"
 	"webtyp.com/fmt"
 	"webtyp.com/idempotency"
 	"webtyp.com/model"
 	"webtyp.com/orm"
 	"webtyp.com/outbox"
+	"webtyp.com/router"
 	"webtyp.com/rpc"
 	wtime "webtyp.com/time"
 	"webtyp.com/view"
-	"errors"
 )
 
 const (
@@ -100,9 +101,14 @@ func (c *Client) checkEpoch(epoch string) error {
 type sender struct{ c *Client }
 
 func (s sender) Send(m *outbox.Mutation) outbox.Result {
+	op, err := router.ParseOperation(m.Op)
+	if err != nil {
+		// A row queued before operations were typed: refuse it loudly, the person sees it in the tray.
+		return outbox.Result{Verdict: outbox.Rejected, Reason: err.Error()}
+	}
 	ch := make(chan error, 1)
-	s.c.cfg.Remote.CallKeyed(m.Op, m.Id, m.Payload, nil, func(err error) { ch <- err })
-	err := <-ch
+	s.c.cfg.Remote.CallKeyed(op, m.Id, m.Payload, nil, func(err error) { ch <- err })
+	err = <-ch
 	if err == nil {
 		s.c.online.Store(true)
 		s.c.raw.Delete(&Touched{}, orm.Eq(Touched_.MutationId, m.Id))

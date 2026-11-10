@@ -173,7 +173,7 @@ func Open(cfg ClientConfig) (*Client, error) {
 	if c.ops, err = harvest(mods); err != nil {
 		return nil, err
 	}
-	c.local = crud.LoopbackActingAs(cfg.UserID, mods...)
+	c.local = crud.LoopbackActingAs(nil, cfg.UserID, mods...) // the offline modules announce nothing outside the device
 	if c.box, err = outbox.New(c.raw, c.ids, cfg.Now); err != nil {
 		return nil, err
 	}
@@ -342,9 +342,9 @@ func (d *deviceIDs) lastMinted() int64 {
 	return d.last
 }
 
-// opInfo is what dbsync knows of an offline operation: its qualified name and declared action.
+// opInfo is what dbsync knows of an offline operation: its identity and declared action.
 type opInfo struct {
-	name     string
+	op       router.Operation
 	action   model.Action
 	declared bool // Requires was called
 	// mfa: the route demands a second factor. An offline replay cannot prove
@@ -352,10 +352,9 @@ type opInfo struct {
 	mfa bool
 }
 
-// harvester is a router.OperationRegistry that only records names and actions.
+// harvester is a router.OperationRegistry that only records operations and actions.
 type harvester struct {
-	module string
-	ops    []opInfo
+	ops []opInfo
 }
 
 func harvest(mods []crud.Module) ([]opInfo, error) {
@@ -364,16 +363,15 @@ func harvest(mods []crud.Module) ([]opInfo, error) {
 		if m == nil {
 			continue
 		}
-		h.module = m.ModelName()
-		if err := crud.Mount(h, nil, m); err != nil {
+		if err := crud.Mount(h, nil, nil, m); err != nil {
 			return nil, err
 		}
 	}
 	return h.ops, nil
 }
 
-func (h *harvester) Operation(name string, _ router.HandlerFunc) router.Route {
-	h.ops = append(h.ops, opInfo{name: h.module + "." + name})
+func (h *harvester) Operation(op router.Operation, _ router.HandlerFunc) router.Route {
+	h.ops = append(h.ops, opInfo{op: op})
 	return harvestRoute{h: h, i: len(h.ops) - 1}
 }
 
@@ -395,9 +393,9 @@ func (r harvestRoute) RequiresMFA() router.Route {
 func (r harvestRoute) Accepts(_ model.Fielder) router.Route { return r }
 func (r harvestRoute) Describe(_ string) router.Route       { return r }
 
-func (c *Client) op(name string) (opInfo, bool) {
+func (c *Client) op(op router.Operation) (opInfo, bool) {
 	for _, o := range c.ops {
-		if o.name == name {
+		if o.op == op {
 			return o, o.declared && !o.mfa
 		}
 	}

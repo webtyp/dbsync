@@ -15,8 +15,12 @@ import (
 type badMod struct{}
 
 func (badMod) ModelName() string { return "bad" }
+func (badMod) Definition() model.ModuleDefinition {
+	return model.ModuleDefinition{Name: "bad", Entities: []model.Definition{{
+		Name: "note", Wire: true, Allow: model.Read, Rules: model.Rules{Read: model.AddMyBusinessRule}}}}
+}
 func (badMod) MountOperations(reg crud.Registry) {
-	reg.Update(nil, nil)
+	reg.AddReadOnlyEntity(&Note{}, nil, nil)
 }
 
 func TestHarvest_CrudWiringErrorStopsClient(t *testing.T) {

@@ -12,7 +12,9 @@ import (
 
 	"webtyp.com/crud"
 	"webtyp.com/dbsync"
+	"webtyp.com/model"
 	"webtyp.com/orm"
+	"webtyp.com/router"
 	"webtyp.com/storage"
 	"webtyp.com/storage/mem"
 )
@@ -24,7 +26,7 @@ func TestServer_PublishesHeadOnChange(t *testing.T) {
 	// Since SSE stream blocks until timeout or disconnect, we start the request
 	// then trigger the event we want to see on the stream.
 
-	req, _ := http.NewRequest(http.MethodGet, s.url+"/api/dbsync/events", nil)
+	req, _ := http.NewRequest(http.MethodGet, sseURL(t, s)+"/api/dbsync/events", nil)
 
 	client := &http.Client{Timeout: 100 * time.Millisecond}
 
@@ -63,7 +65,7 @@ func TestServer_EventsNeedSession(t *testing.T) {
 	s := newServer(t)
 	s.noAuth = true
 
-	req, _ := http.NewRequest(http.MethodGet, s.url+"/api/dbsync/events", nil)
+	req, _ := http.NewRequest(http.MethodGet, sseURL(t, s)+"/api/dbsync/events", nil)
 	client := &http.Client{Timeout: 200 * time.Millisecond}
 	resp, err := client.Do(req)
 
@@ -204,7 +206,7 @@ func TestRejectedWriteIsUndoneLocallyAndListed(t *testing.T) {
 		return d.c.Status().Rejected == 1 && !local
 	})
 	rej, err := d.c.Rejected()
-	if err != nil || len(rej) != 1 || rej[0].Reason != "taken" || rej[0].Op != "notes.note_c" {
+	if err != nil || len(rej) != 1 || rej[0].Reason != "taken" || rej[0].Op != "notes.note.create" {
 		t.Fatalf("Rejected() = %+v, %v", rej, err)
 	}
 
@@ -230,7 +232,7 @@ func TestRejectedUpdateRestoresTheServersRow(t *testing.T) {
 		Fields: []string{"text"},
 		Record: &Note{Id: "n1", Owner: userID, Text: "locked"},
 	}
-	if err := d.call("notes.note_u", updateArgs); err != nil {
+	if err := d.call(opNote(model.Update), updateArgs); err != nil {
 		t.Fatalf("update_note: %v", err)
 	}
 	if n, _ := d.note("n1"); n == nil || n.Text != "locked" {
@@ -240,7 +242,7 @@ func TestRejectedUpdateRestoresTheServersRow(t *testing.T) {
 		n, _ := d.note("n1")
 		return n != nil && n.Text == "a" && d.c.Status().Rejected == 1
 	})
-	if rej, _ := d.c.Rejected(); len(rej) != 1 || rej[0].Reason != "locked" || rej[0].Op != "notes.note_u" {
+	if rej, _ := d.c.Rejected(); len(rej) != 1 || rej[0].Reason != "locked" || rej[0].Op != "notes.note.update" {
 		t.Fatalf("Rejected() = %+v", rej)
 	}
 }
@@ -354,13 +356,13 @@ func TestFirstRunNeedsTheServer(t *testing.T) {
 func TestOnlyDeclaredOperationsRunOffline(t *testing.T) {
 	s := newServer(t)
 	d := open(t, s)
-	for _, op := range []string{"notes.nope", "notes.note_d"} {
+	for _, op := range []router.Operation{{Module: "notes", Entity: "nope", Action: model.Read}, opNote(model.Delete)} {
 		err := d.call(op, &Note{})
 		if err == nil || !strings.Contains(err.Error(), "is not an offline operation") {
-			t.Fatalf("%s: err = %v", op, err)
+			t.Fatalf("%s: err = %v", op.String(), err)
 		}
 	}
-	if err := d.call("notes.note_r", &crud.ReadArgs{ID: "missing"}); err == nil {
+	if err := d.call(opNote(model.Read), &crud.ReadArgs{ID: "missing"}); err == nil {
 		t.Fatal("read of a missing note should fail locally")
 	}
 }

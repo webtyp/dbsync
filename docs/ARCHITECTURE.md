@@ -4,9 +4,9 @@
 
 | Piece | Role here |
 |---|---|
-| `router.OperationModule`, `router/loopback.ActingAs` | the same modules run in the browser, in process, with the user's identity |
+| `crud.LoopbackActingAs` | the same modules run in the browser, in process, with the user's identity |
 | `webtyp.com/outbox` | ordered, durable queue of local writes; retry, reject, redeliver, prune |
-| `rpc.Caller.CallKeyed` | sends one queued write to its normal endpoint `POST /api/<module>/<op>` with `Idempotency-Key: <mutation id>` |
+| `rpc.Caller.CallKeyed` | sends one queued write to its REST endpoint (`POST\|PATCH\|DELETE /api/<module>/<entity>`) with `Idempotency-Key: <mutation id>` |
 | `webtyp.com/idempotency` | server middleware: a repeated key is answered once |
 | `webtyp.com/changelog` | server: versioned record of every write (the feed). Browser: which rows a local write touched |
 | `webtyp.com/unixid` | `<nanos>.<replica>` ids that never collide between devices |
@@ -24,9 +24,9 @@ sequenceDiagram
     participant L as local db (IndexedDB)
     participant S as server (rpc + idempotency)
     participant D as dbsync server
-    V->>C: Caller().Call(op, args)
+    V->>C: Caller().Call(router.Operation, args)
     C->>L: run op locally (loopback), record touched rows
-    C->>L: outbox.Enqueue(op, args)
+    C->>L: outbox.Enqueue(Operation.String(), args)
     C-->>V: done(nil) at once
     C->>D: GET /head (epoch)
     C->>S: POST /api/<module>/<op> + Idempotency-Key
@@ -66,6 +66,7 @@ sequenceDiagram
 - **Epoch.** Each server process has one. A new epoch (restart, failover to a standby) makes the
   client resend what it delivered in the last 10 minutes; the idempotency store answers what the
   server already has.
+- **An operation is a typed `router.Operation`; the queue stores its text** (`Operation.String()`, e.g. `notes.note.create`) and the sender parses it back with `router.ParseOperation`. A row queued in the old format (`notes.note_c`) cannot be parsed: it is rejected and shows in the conflict tray with its text, and nothing is sent.
 - **Operations without `Requires` are not offline.** Only declared actions are classified: exactly
   `model.Read` = read; any other action = write.
 - **Columns by user.** `Rule.Fields(userID)` narrows the columns a user receives (minimisation:

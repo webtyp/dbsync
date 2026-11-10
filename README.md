@@ -3,7 +3,8 @@
 
 Offline-first sync for webtyp apps: every browser runs the same domain modules over its own local
 database, so reads and writes keep working while the server is unreachable. Writes are queued and
-pushed to their normal endpoints with an `Idempotency-Key`; the server's change log flows back.
+pushed to their normal endpoints with an `Idempotency-Key`; the queue stores `Operation.String()`.
+The server's change log flows back.
 
 How it works, the protocol and its limits: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -58,7 +59,7 @@ func SyncRules() []dbsync.Rule {
 | `migrate.Migrate` | server | creates `dbsync_replica` with `ddl.Sync` ([flow](https://github.com/webtyp/ddl/blob/main/docs/diagrams/SYNC_FLOW.md)) |
 | `LocalModels(tables)` | browser | every table the local database must have |
 | `Open(ClientConfig)` | browser | tab lock, replica number, first copy, background sync |
-| `Client.Caller()` / `IDs()` | browser | what views and forms use |
+| `Client.Caller()` / `IDs()` | browser | what views and forms use; callers dispatch typed `router.Operation` |
 | `Client.Sync()` / `Status()` / `OnStatus(fn)` | browser | sync now; the connection indicator |
 | `Client.Rejected()` / `Dismiss(id)` | browser | the conflict tray |
 | `ErrAnotherTab`, `ErrFirstRunNeedsServer` | browser | the two errors an app shows to the user |

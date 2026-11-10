@@ -3,10 +3,10 @@
 package tests
 
 import (
-	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -22,8 +22,9 @@ import (
 	"webtyp.com/model"
 	"webtyp.com/orm"
 	"webtyp.com/router"
+	"webtyp.com/router/mock"
+	"webtyp.com/router/routertest"
 	"webtyp.com/rpc"
-	"webtyp.com/server/httpd"
 	"webtyp.com/storage"
 	"webtyp.com/storage/mem"
 	"webtyp.com/view"
@@ -32,7 +33,7 @@ import (
 const (
 	userID         = "u1"
 	otherUser      = "u2"
-	pathCreateNote = "/api/notes/note_c"
+	pathCreateNote = "/api/notes/note"
 	pathPull       = "/api/dbsync/pull"
 	waitFor        = 5 * time.Second
 )
@@ -51,6 +52,7 @@ var noteSchema = []model.Field{
 }
 
 func (n *Note) ModelName() string     { return "note" }
+func (n *Note) Allow() model.Action   { return model.AllActions }
 func (n *Note) Schema() []model.Field { return noteSchema }
 func (n *Note) Pointers() []any       { return []any{&n.Id, &n.Owner, &n.Text} }
 func (n *Note) IsNil() bool           { return n == nil }
@@ -107,56 +109,54 @@ var tables = []func() model.Model{noteFactory}
 // (create) and "locked" (update), as a real server refuses what a device could not know.
 type notes struct {
 	db     *orm.DB
+	ids    model.IDGenerator
 	server bool
-	calls  *atomic.Int32 // create_note runs
+	calls  *atomic.Int32 // create runs
 }
 
 func (m *notes) ModelName() string { return "notes" }
 
+func (m *notes) Definition() model.ModuleDefinition {
+	return model.ModuleDefinition{Name: m.ModelName(), Entities: []model.Definition{{
+		Name: "note", Allow: model.AllActions, MFA: model.Delete,
+		Rules: model.Rules{Create: model.AddMyBusinessRule, Read: model.HaveNoBusinessRule, Update: model.AddMyBusinessRule, Delete: model.HaveNoBusinessRule},
+	}}}
+}
+
 func (m *notes) MountOperations(reg crud.Registry) {
-	reg.Create(func() model.ModelSlice { return &NoteList{} }, func(c crud.Caller, list model.ModelSlice) error {
-		nl := list.(*NoteList)
-		for _, n := range *nl {
+	reg.AddStoredEntity(crud.StoredEntity{
+		Model:   &Note{},
+		NewList: func() model.ModelSlice { return &NoteList{} },
+		Store:   orm.GlobalStore(m.db, m.ids),
+		Rules:   m.Definition().Entities[0].Rules,
+		MFA:     model.Delete,
+		Create: func(a crud.CurrentUser, tx crud.Tx, rec model.Model) (crud.RuleAnswer, error) {
 			if m.calls != nil {
 				m.calls.Add(1)
 			}
-			if m.server && n.Text == "taken" {
-				return model.Conflict("taken")
+			if m.server && rec.(*Note).Text == "taken" {
+				return 0, model.Conflict("taken")
 			}
-			if err := m.db.Create(n); err != nil {
-				return err
+			return crud.ApplyAndPublish, nil
+		},
+		Update: func(a crud.CurrentUser, tx crud.Tx, old, next model.Model, fields []string) (crud.RuleAnswer, error) {
+			if m.server && next.(*Note).Text == "locked" {
+				return 0, model.Conflict("locked")
 			}
-		}
-		return nil
+			return crud.ApplyAndPublish, nil
+		},
 	})
-
-	reg.Update(func() model.Model { return &Note{} }, func(c crud.Caller, ids, fields []string, rec model.Model) error {
-		n := rec.(*Note)
-		if m.server && n.Text == "locked" {
-			return model.Conflict("locked")
-		}
-		for _, id := range ids {
-			n.Id = id
-			if err := m.db.Update(n, orm.Eq("id", id)); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-
-	reg.Read(&Note{}, nil, func(c crud.Caller, args crud.ReadArgs, filter model.Model) (model.ModelSlice, error) {
-		var n Note
-		if err := m.db.Query(&n).Where("id").Eq(args.ID).ReadOne(); err != nil {
-			return nil, errors.New("not found")
-		}
-		out := NoteList{&n}
-		return &out, nil
-	})
-
-	reg.Delete(&Note{}, func(c crud.Caller, ids []string) error {
-		return nil
-	}).RequiresMFA()
 }
+
+// opNote is the operation of one action on a note.
+func opNote(a model.Action) router.Operation {
+	return router.Operation{Module: "notes", Entity: "note", Action: a}
+}
+
+// testIDs mints the ids the server-side store needs for a record created without one.
+type testIDs struct{ n atomic.Int64 }
+
+func (g *testIDs) NewID() string { return "srv-" + strconv.FormatInt(g.n.Add(1), 10) }
 
 func now() wtime.Nano { return wtime.NowNano() }
 
@@ -209,8 +209,8 @@ func (s *server) freshIdempotency() {
 }
 
 func (s *server) handler() http.Handler {
-	srv := httpd.New(httpd.Config{
-		TLS: httpd.TLSConfig{PlainHTTP: true},
+	r := &mock.Router{}
+	r.Configure(mock.Config{
 		Authn: func(next router.HandlerFunc) router.HandlerFunc {
 			return func(ctx router.Context) {
 				if !s.noAuth {
@@ -221,9 +221,8 @@ func (s *server) handler() http.Handler {
 		},
 		Authorize: allow,
 	})
-	r := srv.Router()
 	r.Use(s.idem.Middleware()) // before mounting the routes
-	if err := rpc.Mount(r, rpc.DefaultPrefix, nil, nil, &notes{db: s.db, server: true, calls: &s.calls}); err != nil {
+	if err := rpc.Mount(r, rpc.DefaultPrefix, nil, nil, nil, &notes{db: s.db, ids: &testIDs{}, server: true, calls: &s.calls}); err != nil {
 		s.t.Fatalf("rpc.Mount: %v", err)
 	}
 	syncSrv, err := dbsync.NewServer(dbsync.ServerConfig{
@@ -237,10 +236,7 @@ func (s *server) handler() http.Handler {
 		s.t.Fatalf("dbsync.NewServer: %v", err)
 	}
 	syncSrv.MountAPI(r)
-	h, err := srv.Handler()
-	if err != nil {
-		s.t.Fatalf("Handler: %v", err)
-	}
+	h := routertest.Handler(r)
 	// Outside the router, so it sees every request, even one the idempotency store answers.
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		s.mu.Lock()
@@ -328,7 +324,7 @@ func config(s *server, local storage.Conn, lock dbsync.TabLock) dbsync.ClientCon
 		Origin: s.url,
 		Tables: tables,
 		Modules: func(db *orm.DB, _ model.IDGenerator) ([]crud.Module, error) {
-			return []crud.Module{&notes{db: db}}, nil
+			return []crud.Module{&notes{db: db, ids: &testIDs{}}}, nil
 		},
 		TenantID: "t1",
 		UserID:   userID,
@@ -351,7 +347,7 @@ func open(t *testing.T, s *server) *device {
 }
 
 // call runs op through the device's Caller and waits for done.
-func (d *device) call(op string, args model.Encodable) error {
+func (d *device) call(op router.Operation, args model.Encodable) error {
 	d.t.Helper()
 	ch := make(chan error, 1)
 	d.c.Caller().Call(op, args, nil, func(err error) { ch <- err })
@@ -359,7 +355,7 @@ func (d *device) call(op string, args model.Encodable) error {
 	case err := <-ch:
 		return err
 	case <-time.After(waitFor):
-		d.t.Fatalf("%s: no answer", op)
+		d.t.Fatalf("%s: no answer", op.String())
 		return nil
 	}
 }
@@ -368,7 +364,7 @@ func (d *device) create(text string) *Note {
 	d.t.Helper()
 	n := &Note{Id: d.c.IDs().NewID(), Owner: userID, Text: text}
 	args := &crud.CreateArgs{Records: []model.Model{n}}
-	if err := d.call("notes.note_c", args); err != nil {
+	if err := d.call(opNote(model.Create), args); err != nil {
 		d.t.Fatalf("create_note: %v", err)
 	}
 	return n
