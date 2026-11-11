@@ -11,7 +11,7 @@ require (
 	webtyp.com/ddl v0.0.49
 	webtyp.com/dom v0.13.29
 	webtyp.com/idempotency v0.1.4
-	webtyp.com/model v0.2.19
+	webtyp.com/model v0.2.21
 	webtyp.com/orm v0.12.31
 	webtyp.com/outbox v0.1.29
 	webtyp.com/router v0.4.21
