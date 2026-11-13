@@ -10,7 +10,7 @@ require (
 	webtyp.com/ddl v0.0.49
 	webtyp.com/dom v0.13.29
 	webtyp.com/fetch v0.1.30
-	webtyp.com/fmt v1.0.0
+	webtyp.com/fmt v1.0.1
 	webtyp.com/html v0.0.30
 	webtyp.com/idempotency v0.1.4
 	webtyp.com/json v0.5.40
