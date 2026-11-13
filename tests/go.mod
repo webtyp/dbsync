@@ -20,7 +20,7 @@ require (
 	webtyp.com/storage v0.2.3
 	webtyp.com/time v0.6.5
 	webtyp.com/view v0.6.72
-	webtyp.com/widget v0.6.46
+	webtyp.com/widget v0.6.47
 )
 
 require (
