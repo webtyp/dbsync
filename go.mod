@@ -35,7 +35,7 @@ require (
 	webtyp.com/definitioncheck v0.0.3 // indirect
 	webtyp.com/escape v0.1.0 // indirect
 	webtyp.com/events v0.1.8 // indirect
-	webtyp.com/filepath v0.1.0 // indirect
+	webtyp.com/filepath v0.1.3 // indirect
 	webtyp.com/font v0.0.5 // indirect
 	webtyp.com/msgtype v0.1.0 // indirect
 )
