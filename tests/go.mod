@@ -53,7 +53,7 @@ require (
 	webtyp.com/json v0.5.40 // indirect
 	webtyp.com/lang v0.1.16 // indirect
 	webtyp.com/msgtype v0.1.0 // indirect
-	webtyp.com/pwa v0.2.13 // indirect
+	webtyp.com/pwa v0.2.24 // indirect
 	webtyp.com/sse v0.2.51 // indirect
 	webtyp.com/unixid v0.3.1 // indirect
 )
